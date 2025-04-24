@@ -15,8 +15,10 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cobra"
 	"github.com/yuin/goldmark"
+	highlighting "github.com/yuin/goldmark-highlighting"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
+	_ "github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
@@ -83,7 +85,13 @@ func generateSite(postsPath, outputPath string) {
 	fmt.Println("POSTS:", posts)
 
 	md := goldmark.New(
-		goldmark.WithExtensions(extension.GFM),
+		goldmark.WithExtensions(extension.GFM, highlighting.NewHighlighting(
+			// highlighting.WithFormatOptions(
+			// 	htmlchroma.WithLineNumbers(true),
+			// ),
+			highlighting.WithStyle("github"), // choose a theme
+			highlighting.WithGuessLanguage(false),
+		)),
 		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
 		goldmark.WithRendererOptions(html.WithHardWraps(), html.WithXHTML()),
 	)

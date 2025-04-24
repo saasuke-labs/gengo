@@ -15,14 +15,9 @@
         padding: 18px;
       }
     </style>
-    <title>{{ .Title }}</title>
+    <title>Talk, think, code</title>
     <link rel="stylesheet" href="/styles.css" />
-    {{ if .Watch }}
-    <script>
-      const es = new EventSource("/reload");
-      es.onmessage = () => location.reload();
-    </script>
-    {{ end }}
+    
   </head>
   <body>
     <div
@@ -280,7 +275,23 @@
     </div>
 
     <div class="container">
-      <article>{{ .HTML }}</article>
+      <article><h1 id="talk-think-code">Talk, think, code</h1>
+<p>For many, software engineering evokes images of relentless coding and complex diagrams. Early in my career, I was no exception, prioritizing coding over thinking and definitely over talking. My aim was simple: deliver features one after another. The approach was straightforward: think only when necessary, find a solution, and then code. Talking was reserved for when there was leftover time.</p>
+<p>As I progressed in my career, it became increasingly clear that effective engineering relies more on discussions than on coding. Excellence in this field is about deeply understanding and breaking down problems through conversation, then carefully considering possible solutions and their trade-offs before choosing the best approach. Only then do we finally code the solution.</p>
+<p>The quality of the software isn't just about the implementation (like clean code), but more importantly, about the quality of the conversations that preceded it and the solutions chosen.</p>
+<p>Though I've never formally used Pair Programming or TDD, they were briefly mentioned during a recent interview, and something just clicked. I realized that at their core, these practices highlight the importance of talking and thinking before coding.</p>
+<h2 id="test-driven-development-tdd">Test Driven Development (TDD)</h2>
+<p>TDD acts as a powerful tool that encourages developers to pause and think deeply about the problem at hand. It's about considering the problem, coding in the realm of testing while keeping an eye on the solution, and finally, coding it.</p>
+<p>TDD stops us from diving straight into coding the solution. It ensures that when we do code, our work is focused, efficient, and truly necessary.</p>
+<h2 id="pair-programming">Pair programming</h2>
+<p>Pair Programming stresses the importance of dialogue and critical thinking before starting to code. It merges different perspectives, informed by unique experiences and understandings of the problem, to develop a shared and refined approach to solving it. This enriches the development process, leading to a clearer understanding, a more detailed problem breakdown, and a more effective solution.</p>
+<p>Like TDD, Pair Programming encourages taking a step back to invest more in conversation and thought, slowing down the rush to code.</p>
+<h2 id="extra-domain-driven-design-ddd">Extra: Domain-Driven Design (DDD)</h2>
+<p>Although it was not part of the the interview, DDD also came to my mind.</p>
+<p>Domain-Driven Design takes the idea of optimizing conversations and thinking in software development to another level. It's all about crafting a shared language—specific to the project's domain—that everyone, from developers to business stakeholders, uses. This common language ensures that when we talk about the project, there's no gap between what we say and what we code. It's like building a bridge between the problem space and the solution space, making sure that the conversations not only lead to better understanding but also directly influence the implementation in a meaningful way.</p>
+<p>DDD emphasizes the importance of deeply understanding the domain you're working in. By defining a ubiquitous language and using it consistently across conversations and in the code, we close the gap that often exists between what needs to be done and how it's executed. This approach streamlines the development process, making it more efficient and ensuring that the solutions are more aligned with the business goals and user needs.</p>
+<p>Like TDD and Pair Programming, DDD encourages us to slow down and invest more in the upfront thought process. It shows how powerful and essential clear communication and shared understanding are in delivering high-quality software.</p>
+</article>
     </div>
 
     <footer>
