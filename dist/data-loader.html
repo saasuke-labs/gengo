@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Understanding the Dataloader</title>
+    <link rel="stylesheet" href="/styles.css" />
+    
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="/">Home</a>
+      </nav>
+    </header>
+
+    <main>
+      <article><h1 id="understanding-the-dataloader">Understanding the Dataloader</h1>
+<p><a href="https://github.com/graphql/dataloader">Dataloader</a> is one of the packages I find more useful and smart from the ones I have in my toolbox.</p>
+<p>In this post we are going to navigate a simple but complex enough example to find out the need for a Dataloader.<br />
+After that we will implement a naive version of the dataloader to understand its beauty and how useful it is.</p>
+<h2 id="about-the-project">About the project</h2>
+<p>We have data about libraries and their dependencies. We want to implement a tool that renders the tree of dependencies of a given library.<br />
+The tree should show the library and its dependencies, and the dependencies of the dependencies.</p>
+<p>These are the dependencies of the libraries:</p>
+<pre><code class="language-text">WebRender depends on HttpClient, Utils, and Logger.
+HttpClient depends on NetworkTools and Logger.
+Utils depends on NetworkTools, CacheManager, and Logger.
+NetworkTools depends on Logger.
+CacheManager depends on Logger.
+DatabaseConnector depends on NetworkTools and CacheManager.
+AuthService depends on HttpClient and Logger.
+ApiGateway depends on HttpClient and DatabaseConnector.
+PaymentProcessor depends on DatabaseConnector and CacheManager.
+Logger has no dependencies (it's a foundational library).
+</code></pre>
+<p>In JSON format:</p>
+<pre><code class="language-json">[
+  {
+    &quot;name&quot;: &quot;WebRender&quot;,
+    &quot;version&quot;: &quot;1.0.0&quot;,
+    &quot;dependencies&quot;: [
+      {
+        &quot;name&quot;: &quot;HttpClient&quot;,
+        &quot;version&quot;: &quot;2.1.0&quot;
+      },
+      {
+        &quot;name&quot;: &quot;Utils&quot;,
+        &quot;version&quot;: &quot;3.0.0&quot;
+      },
+      {
+        &quot;name&quot;: &quot;Logger&quot;,
+        &quot;version&quot;: &quot;1.2.0&quot;
+      }
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;HttpClient&quot;,
+    &quot;version&quot;: &quot;2.1.0&quot;,
+    &quot;dependencies&quot;: [
+      {
+        &quot;name&quot;: &quot;NetworkTools&quot;,
+        &quot;version&quot;: &quot;1.5.0&quot;
+      },
+      {
+        &quot;name&quot;: &quot;Logger&quot;,
+        &quot;version&quot;: &quot;1.2.0&quot;
+      }
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;Utils&quot;,
+    &quot;version&quot;: &quot;3.0.0&quot;,
+    &quot;dependencies&quot;: [
+      {
+        &quot;name&quot;: &quot;NetworkTools&quot;,
+        &quot;version&quot;: &quot;1.5.0&quot;
+      },
+      {
+        &quot;name&quot;: &quot;CacheManager&quot;,
+        &quot;version&quot;: &quot;4.2.0&quot;
+      },
+      {
+        &quot;name&quot;: &quot;Logger&quot;,
+        &quot;version&quot;: &quot;1.2.0&quot;
+      }
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;NetworkTools&quot;,
+    &quot;version&quot;: &quot;1.5.0&quot;,
+    &quot;dependencies&quot;: [
+      {
+        &quot;name&quot;: &quot;Logger&quot;,
+        &quot;version&quot;: &quot;1.2.0&quot;
+      }
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;CacheManager&quot;,
+    &quot;version&quot;: &quot;4.2.0&quot;,
+    &quot;dependencies&quot;: [
+      {
+        &quot;name&quot;: &quot;Logger&quot;,
+        &quot;version&quot;: &quot;1.2.0&quot;
+      }
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;DatabaseConnector&quot;,
+    &quot;version&quot;: &quot;2.4.0&quot;,
+    &quot;dependencies&quot;: [
+      {
+        &quot;name&quot;: &quot;NetworkTools&quot;,
+        &quot;version&quot;: &quot;1.5.0&quot;
+      },
+      {
+        &quot;name&quot;: &quot;CacheManager&quot;,
+        &quot;version&quot;: &quot;4.2.0&quot;
+      }
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;AuthService&quot;,
+    &quot;version&quot;: &quot;1.1.0&quot;,
+    &quot;dependencies&quot;: [
+      {
+        &quot;name&quot;: &quot;HttpClient&quot;,
+        &quot;version&quot;: &quot;2.1.0&quot;
+      },
+      {
+        &quot;name&quot;: &quot;Logger&quot;,
+        &quot;version&quot;: &quot;1.2.0&quot;
+      }
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;ApiGateway&quot;,
+    &quot;version&quot;: &quot;3.3.0&quot;,
+    &quot;dependencies&quot;: [
+      {
+        &quot;name&quot;: &quot;HttpClient&quot;,
+        &quot;version&quot;: &quot;2.1.0&quot;
+      },
+      {
+        &quot;name&quot;: &quot;DatabaseConnector&quot;,
+        &quot;version&quot;: &quot;2.4.0&quot;
+      }
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;PaymentProcessor&quot;,
+    &quot;version&quot;: &quot;5.1.0&quot;,
+    &quot;dependencies&quot;: [
+      {
+        &quot;name&quot;: &quot;DatabaseConnector&quot;,
+        &quot;version&quot;: &quot;2.4.0&quot;
+      },
+      {
+        &quot;name&quot;: &quot;CacheManager&quot;,
+        &quot;version&quot;: &quot;4.2.0&quot;
+      }
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;Logger&quot;,
+    &quot;version&quot;: &quot;1.2.0&quot;,
+    &quot;dependencies&quot;: []
+  }
+]
+</code></pre>
+<p>This is the metadata of the libraries:</p>
+<pre><code class="language-json">[
+  {
+    &quot;name&quot;: &quot;WebRender&quot;,
+    &quot;owner&quot;: &quot;WebDevCorp&quot;,
+    &quot;repo_url&quot;: &quot;https://github.com/WebDevCorp/WebRender&quot;,
+    &quot;release_date&quot;: &quot;2023-01-15&quot;,
+    &quot;license&quot;: &quot;MIT&quot;,
+    &quot;maintainers&quot;: [
+      &quot;Alice Johnson&quot;,
+      &quot;Bob Smith&quot;
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;HttpClient&quot;,
+    &quot;owner&quot;: &quot;NetToolsInc&quot;,
+    &quot;repo_url&quot;: &quot;https://github.com/NetToolsInc/HttpClient&quot;,
+    &quot;release_date&quot;: &quot;2022-09-30&quot;,
+    &quot;license&quot;: &quot;Apache-2.0&quot;,
+    &quot;maintainers&quot;: [
+      &quot;Charlie Brown&quot;,
+      &quot;Dave White&quot;
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;Utils&quot;,
+    &quot;owner&quot;: &quot;CoreUtils&quot;,
+    &quot;repo_url&quot;: &quot;https://github.com/CoreUtils/Utils&quot;,
+    &quot;release_date&quot;: &quot;2021-12-05&quot;,
+    &quot;license&quot;: &quot;GPL-3.0&quot;,
+    &quot;maintainers&quot;: [
+      &quot;Eve Green&quot;,
+      &quot;Frank Black&quot;
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;NetworkTools&quot;,
+    &quot;owner&quot;: &quot;NetToolsInc&quot;,
+    &quot;repo_url&quot;: &quot;https://github.com/NetToolsInc/NetworkTools&quot;,
+    &quot;release_date&quot;: &quot;2021-08-22&quot;,
+    &quot;license&quot;: &quot;MIT&quot;,
+    &quot;maintainers&quot;: [
+      &quot;Grace Blue&quot;
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;CacheManager&quot;,
+    &quot;owner&quot;: &quot;TechCore&quot;,
+    &quot;repo_url&quot;: &quot;https://github.com/TechCore/CacheManager&quot;,
+    &quot;release_date&quot;: &quot;2023-05-10&quot;,
+    &quot;license&quot;: &quot;MIT&quot;,
+    &quot;maintainers&quot;: [
+      &quot;Hannah Red&quot;,
+      &quot;Ivy Gold&quot;
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;DatabaseConnector&quot;,
+    &quot;owner&quot;: &quot;DatabaseTech&quot;,
+    &quot;repo_url&quot;: &quot;https://github.com/DatabaseTech/DatabaseConnector&quot;,
+    &quot;release_date&quot;: &quot;2022-11-20&quot;,
+    &quot;license&quot;: &quot;Apache-2.0&quot;,
+    &quot;maintainers&quot;: [
+      &quot;Jack Silver&quot;
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;AuthService&quot;,
+    &quot;owner&quot;: &quot;AuthCorp&quot;,
+    &quot;repo_url&quot;: &quot;https://github.com/AuthCorp/AuthService&quot;,
+    &quot;release_date&quot;: &quot;2023-03-14&quot;,
+    &quot;license&quot;: &quot;MIT&quot;,
+    &quot;maintainers&quot;: [
+      &quot;Kevin Purple&quot;,
+      &quot;Lily Orange&quot;
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;ApiGateway&quot;,
+    &quot;owner&quot;: &quot;GatewayTech&quot;,
+    &quot;repo_url&quot;: &quot;https://github.com/GatewayTech/ApiGateway&quot;,
+    &quot;release_date&quot;: &quot;2022-07-01&quot;,
+    &quot;license&quot;: &quot;GPL-3.0&quot;,
+    &quot;maintainers&quot;: [
+      &quot;Mason Yellow&quot;
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;PaymentProcessor&quot;,
+    &quot;owner&quot;: &quot;FinTechCo&quot;,
+    &quot;repo_url&quot;: &quot;https://github.com/FinTechCo/PaymentProcessor&quot;,
+    &quot;release_date&quot;: &quot;2023-02-17&quot;,
+    &quot;license&quot;: &quot;MIT&quot;,
+    &quot;maintainers&quot;: [
+      &quot;Nina Blue&quot;,
+      &quot;Oscar Grey&quot;
+    ]
+  },
+  {
+    &quot;name&quot;: &quot;Logger&quot;,
+    &quot;owner&quot;: &quot;LoggerTools&quot;,
+    &quot;repo_url&quot;: &quot;https://github.com/LoggerTools/Logger&quot;,
+    &quot;release_date&quot;: &quot;2020-04-10&quot;,
+    &quot;license&quot;: &quot;MIT&quot;,
+    &quot;maintainers&quot;: [
+      &quot;Paul Black&quot;
+    ]
+  }
+]
+</code></pre>
+<p>And this is the view we want to implement:<img src="https://raw.githubusercontent.com/tsoobame/dataloader/main/view.png" alt="View" /></p>
+<h2 id="initial-setup">Initial Setup</h2>
+<h3 id="create-the-package">Create the package</h3>
+<pre><code class="language-shell">mkdir dataloader
+cd dataloader
+npm init -y
+</code></pre>
+<h3 id="install-express">Install express</h3>
+<pre><code class="language-shell">npm install express
+</code></pre>
+<h3 id="make-the-package-a-module-to-allow-using-import">Make the package a module to allow using import</h3>
+<p>We need to add</p>
+<pre><code class="language-json">  &quot;type&quot;: &quot;module&quot;,
+</code></pre>
+<p>to the package.json file.</p>
+<h3 id="create-the-files">Create the files</h3>
+<pre><code class="language-shell">touch src/index.js
+</code></pre>
+<h3 id="create-a-basic-server">Create a basic server</h3>
+<pre><code class="language-javascript">// src/index.js
+import express from &quot;express&quot;;
+
+const app = express();
+
+app.get(&quot;/&quot;, (req, res) =&gt; {
+  res.send(&quot;Hello World&quot;);
+});
+
+app.listen(3000, () =&gt; {
+  console.log(&quot;Server is running on port 3000&quot;);
+});
+</code></pre>
+<h3 id="run-the-server">Run the server</h3>
+<pre><code class="language-shell">node src/index.js
+</code></pre>
+<h3 id="try-it-out">Try it out</h3>
+<p>Open <a href="http://localhost:3000">http://localhost:3000</a> in your browser.</p>
+<p>You should see &quot;Hello World&quot;.</p>
+<h2 id="data">Data</h2>
+<p>Save the data in json files like:</p>
+<ul>
+<li>data/dependencies.json</li>
+<li>data/metadata.json</li>
+</ul>
+<h2 id="step-1-naive-implementation">Step 1: Naive implementation</h2>
+<p>We are going to implement an endpoint (actually simulated) that returns the direct dependencies of one or more libraries.</p>
+<p>Crete the file:</p>
+<pre><code class="language-shell">touch src/libraryService.js
+</code></pre>
+<p>Implement a fake service that returns data based on the json files we just created.<br />
+We are adding a delay to simulate a real service and we are logging the requests to the console<br />
+for debugging reasons.</p>
+<pre><code class="language-javascript">// src/libraryService.js
+import dependencies from &quot;../data/dependencies.json&quot; with { type: &quot;json&quot; };
+import metadata from &quot;../data/metadata.json&quot; with { type: &quot;json&quot; };
+
+const sleep = (ms) =&gt; new Promise((resolve) =&gt; setTimeout(resolve, ms));
+
+export async function getDependencies(names) {
+  console.log(new Date(), &quot;GET /dependencies?names=&quot; + names.join(&quot;,&quot;));
+  await sleep(200);
+  return names.map((name) =&gt; dependencies.find((d) =&gt; d.name === name));
+}
+
+export async function getMetadata(names) {
+  console.log(new Date(), &quot;GET /metadata?names=&quot; + names.join(&quot;,&quot;));
+  await sleep(200);
+  return names.map((name) =&gt; metadata.find((d) =&gt; d.name === name));
+}
+</code></pre>
+<p>Let's add our resolver:</p>
+<pre><code class="language-shell">touch src/resolver.js
+</code></pre>
+<pre><code class="language-javascript">// src/resolver.js
+import { getDependencies, getMetadata } from &quot;./libraryService.js&quot;;
+
+export async function getDependenciesWithMetadata(names) {
+  const libs = await getDependencies(names);
+
+  for (const lib of libs) {
+    lib.metadata = await getMetadata(lib.dependencies.map((d) =&gt; d.name));
+    lib.dependencies = await getMetadata(
+      lib.dependencies.map((dep) =&gt; dep.name)
+    );
+  }
+
+  return libs;
+}
+</code></pre>
+<p>Let's add a new endpoint to our server that returns the dependencies of a library:</p>
+<pre><code class="language-javascript">// src/index.js
+import { getDependenciesWithMetadata } from &quot;./resolver.js&quot;;
+...
+app.get(&quot;/dependencies&quot;, async (req, res) =&gt; {
+  const names = req.query.names.split(&quot;,&quot;);
+  const libs = await getDependenciesWithMetadata(names);
+
+  res.json(libs);
+});
+...
+</code></pre>
+<p>Let's test it:</p>
+<pre><code class="language-shell">curl &quot;http://localhost:3000/dependencies?names=WebRender,HttpClient&quot;
+</code></pre>
+<p>You should see the dependencies of WebRender and HttpClient.<br />
+The log of the server will show:</p>
+<pre><code class="language-text">2025-02-05T17:13:27.910Z GET /dependencies?names=WebRender,HttpClient
+2025-02-05T17:13:28.113Z GET /metadata?names=HttpClient,Utils,Logger
+2025-02-05T17:13:28.317Z GET /metadata?names=HttpClient,Utils,Logger
+2025-02-05T17:13:28.519Z GET /metadata?names=NetworkTools,Logger
+2025-02-05T17:13:28.722Z GET /metadata?names=NetworkTools,Logger
+</code></pre>
+<h3 id="datasourcejs">datasource.js</h3>
+<p>The datasource allows us to retrieve one or multiple users by id. Contract is not random, it is already based on the real dataloader so there will be minimal changes over the course of the post. Data is defined in a file within the project. Code is pretty simple:</p>
+<pre><code class="language-javascript">const users = require(&quot;./users.json&quot;);
+
+const getUsersFromFile = (ids) =&gt;
+  ids.map((id) =&gt; users.find((u) =&gt; u.id === id));
+
+const sleep = (ms) =&gt; new Promise((resolve) =&gt; setTimeout(resolve, ms));
+
+async function loadMany(ids) {
+  console.log(`GET /users?ids=${ids}`);
+
+  await sleep(100);
+  return getUsersFromFile(ids);
+}
+
+async function load(id) {
+  const results = await loadMany([id]);
+  return results[0];
+}
+
+module.exports = {
+  load,
+  loadMany,
+};
+</code></pre>
+<p>The only interesting method is loadMany. We will print the requests to the simulated service so we can check the console. There will be a delay to resolve the promise, so we can simulate better and understand why dataloader is so good.</p>
+<p>A very important requirement is that data needs to be returned to the caller in the right order and all elements need to be returned (same length of ids and results arrays). This will be clear when we put in place the dataloader.</p>
+<h3 id="resolverjs">resolver.js</h3>
+<p>Resolver will use the datasource received by parameter to load friendship data about users. It can receive the levels of friends we want to get, so it will use a recursive approach to load friends of friends until all levels are fetched.</p>
+<pre><code class="language-javascript">async function getFriends(datasource, user, levels) {
+  if (levels == 0) {
+    return { id: user.id, name: user.name };
+  }
+
+  const friends = await datasource.loadMany(user.friends);
+
+  return {
+    ...user,
+    friends: await Promise.all(
+      friends.map((f) =&gt; getFriends(datasource, f, levels - 1))
+    ),
+  };
+}
+
+async function getUserWithFriends(datasource, id, levels = 1) {
+  const user = await datasource.load(id);
+  return getFriends(datasource, user, levels);
+}
+
+module.exports = { getUserWithFriends };
+</code></pre>
+<p>It uses a brute force approach on purpose. The code is simple but far away from being optimal. In one method it looks obvious, but sometimes, when we are building graphql or similar apis, or complex workflows we might be doing exactly this kind of brute force requests.</p>
+<h3 id="viewjs">view.js</h3>
+<p>Nothing advanced. Just render users friends in a nested way.</p>
+<pre><code class="language-javascript">function render(user) {
+  return `&lt;div style=&quot;padding-left: 12px;background-color:#def&quot;&gt; ${user.name} ${
+    user.friends ? user.friends.map((u) =&gt; render(u)).join(&quot;&quot;) : &quot;&quot;
+  } &lt;/div&gt;`;
+}
+
+module.exports = {
+  render,
+};
+</code></pre>
+<h3 id="serverjs">server.js</h3>
+<pre><code class="language-javascript">const express = require(&quot;express&quot;);
+const PORT = 3000;
+const app = express();
+
+const datasource = require(&quot;./datasource&quot;);
+const resolver = require(&quot;./resolver&quot;);
+const view = require(&quot;./view&quot;);
+
+app.get(`/user-with-friends/:id`, async (req, res) =&gt; {
+  const id = req.params.id;
+  const levels = req.query.levels || 1;
+
+  const user = await resolver.getUserWithFriends(datasource, id, levels);
+
+  res.send(view.render(user));
+});
+
+app.listen(PORT, () =&gt; console.log(`Fakebook listening to ${PORT}`));
+</code></pre>
+<h2 id="run">Run</h2>
+<pre><code class="language-shell">node index.js
+</code></pre>
+<h2 id="test-1">Test 1</h2>
+<p>We will render friends of user 1. Only 1 level:</p>
+<pre><code class="language-text">http://localhost:3000/user-with-friends/1
+</code></pre>
+<p>If we check in our console we will find:</p>
+<pre><code class="language-text">GET /users?ids=1
+GET /users?ids=2,3
+</code></pre>
+<p>All good. We requested user 1 and their friends 2 and 3.</p>
+<h2 id="test-2">Test 2</h2>
+<p>Let's try by loading 3 levels:</p>
+<pre><code class="language-text">http://localhost:3000/user-with-friends/1?levels=3
+</code></pre>
+<p>Things are getting interesting here:</p>
+<pre><code class="language-text">GET /users?ids=1
+GET /users?ids=2,3
+GET /users?ids=1,3
+GET /users?ids=1,2,4
+GET /users?ids=2,3
+GET /users?ids=1,2,4
+GET /users?ids=2,3
+GET /users?ids=1,3
+GET /users?ids=3,5
+</code></pre>
+<p>We are loading data for users 1,2,3,4,5 but we are doing 9 requests. We are requesting the same users again and again. We could easily improve the situation adding some sort of cache per request.</p>
+<p>Cache per request<br />
+We are going to add a cache to the system. It will be empty at the start of each request, so we do not need to worry about expirations. The benefits will be:</p>
+<p>Do not request the same resource twice to the remote source during the same request.<br />
+As side effect, if we try to get the same resource twice during the same request, we will get the same data. So mutations of the resources in between a request will not provide incoherent results.</p>
+<h3 id="cachejs">cache.js</h3>
+<p>Simple cache implementation:</p>
+<pre><code class="language-javascript">function make(loadManyFn) {
+  const cache = {};
+
+  async function loadMany(ids) {
+    const notCachedIds = ids.filter((id) =&gt; !cache[id]);
+
+    if (notCachedIds.length &gt; 0) {
+      const results = await loadManyFn(notCachedIds);
+      notCachedIds.forEach((id, idx) =&gt; (cache[id] = results[idx]));
+    }
+
+    return ids.map((id) =&gt; cache[id]);
+  }
+
+  return {
+    load: async (id) =&gt; {
+      const results = await loadMany([id]);
+      return results[0];
+    },
+    loadMany,
+  };
+}
+
+module.exports = { make };
+</code></pre>
+<p>Cache needs a function to retrieve multiple data by id (or in general by a key). It will check the data that is cached and request only the ids that are not found.</p>
+<p>Implements the same contract as datasource.</p>
+<h3 id="serverjs-1">server.js</h3>
+<p>Let's add this line to the server:</p>
+<pre><code class="language-javascript">const cache = require('./cache')
+And replace this line:
+
+const user = await resolver.getUserWithFriends(datasource, id, levels)
+with:
+
+const user = await resolver.getUserWithFriends(cache.make(datasource.loadMany), id, levels)
+</code></pre>
+<h2 id="run-1">Run</h2>
+<p>Let's run again the server and test the previous request:</p>
+<pre><code class="language-text">http://localhost:3000/user-with-friends/1?levels=3
+</code></pre>
+<pre><code class="language-text">GET /users?ids=1
+GET /users?ids=2,3
+GET /users?ids=4
+GET /users?ids=4
+GET /users?ids=5
+</code></pre>
+<p>We could reduce the number of requests from 9 to 5, which is pretty good. But, what a momentwhat happened here? Why are we requesting id=4 twice?</p>
+<p>If we unnest the request flow based on how nodejs works (and how we implemented our resolver) this is what happened:</p>
+<pre><code class="language-text">1 - Load user 1 =&gt; GET /users?ids=1
+2 - Load friends of 1: [2,3]=&gt; GET /users?ids=2,3
+3.1. Load friends of 2: [1,3] =&gt; all cached
+4.1. Load friends of 1 : [2,3] =&gt; all cached
+4.2. Load friends of 3 : [1,2,4] =&gt; GET /users?ids=4
+3.2. Load friends of 3: [1,2,4] =&gt; GET /users?ids=4
+4.3. Load friends of 1: [2,3] =&gt; all cached
+4.4. Load friends of 2: [1,3] =&gt; all cached
+4.5. Load friends of 4: [3,5] =&gt; GET /users?ids=5
+On 3.1 we had all friends of user 2 cached. So the code was straight to 4.2, than ran in parallel with 3.2. Both were waiting for the same user (4) and therefore made the same requests twice.
+</code></pre>
+<p>So with our simple cache, we did not reduce the requests to the minimun we wanted.</p>
+<p>For example, if we did:</p>
+<pre><code class="language-javascript">const users = await Promise.all(load(1), load(1));
+</code></pre>
+<p>There would be 2 requests before the cache has data for id=1.</p>
+<p>Let's fix this and produce the ideal:</p>
+<pre><code class="language-text">GET /users?ids=1
+GET /users?ids=2,3
+GET /users?ids=4
+GET /users?ids=5
+</code></pre>
+<h2 id="dataloader">Dataloader</h2>
+<p>Using nodejs <code>process.nextTick(...)</code> we can postpone the execution of a given function to the end of the current event loop cycle. It is useful to run a given function after all variables are initialized for example.</p>
+<p>From nodejs documentation:</p>
+<pre><code class="language-text">By using process.nextTick() we guarantee that apiCall() always runs its callback after the rest of the user's code and before the event loop is allowed to proceed.
+</code></pre>
+<p>Using it we can accumulate all the keys that are being requested during the same cycle (3.2 and 4.2 in the example above) and request them at the end. In the next cycle we would accumulate again the ones that were depending in the previous ones and so on.</p>
+<p>This simple version of dataloader incorporates also code to accomplish the cache:</p>
+<pre><code class="language-javascript">function make(loadManyFn) {
+  const cache = {};
+  let pending = [];
+  let scheduled = false;
+  function scheduleSearch() {
+    if (pending.length &gt; 0 &amp;&amp; !scheduled) {
+      scheduled = true;
+      Promise.resolve().then(() =&gt;
+        process.nextTick(async () =&gt; {
+          await runSearch();
+          scheduled = false;
+        })
+      );
+    }
+  }
+
+  async function runSearch() {
+    const pendingCopy = pending.splice(0, pending.length);
+    pending = [];
+
+    if (pendingCopy.length &gt; 0) {
+      const results = await loadManyFn(pendingCopy.map((p) =&gt; p.id));
+      pendingCopy.forEach(({ resolve }, idx) =&gt; resolve(results[idx]));
+    }
+  }
+
+  async function loadMany(ids) {
+    const notCachedIds = ids.filter((id) =&gt; !cache[id]);
+
+    if (notCachedIds.length &gt; 0) {
+      notCachedIds.map((id) =&gt; {
+        cache[id] = new Promise((resolve) =&gt; {
+          pending.push({ id, resolve });
+        });
+      });
+
+      scheduleSearch();
+    }
+
+    return Promise.all(ids.map((id) =&gt; cache[id]));
+  }
+
+  return {
+    load: async (id) =&gt; {
+      const results = await loadMany([id]);
+      return results[0];
+    },
+    loadMany,
+  };
+}
+
+module.exports = { make };
+</code></pre>
+<p>Ignoring the part of the cache, the important bits are:</p>
+<h3 id="accumulating-requests">Accumulating requests</h3>
+<pre><code class="language-javascript">notCachedIds.map((id) =&gt; {
+  cache[id] = new Promise((resolve) =&gt; {
+    pending.push({ id, resolve });
+  });
+});
+</code></pre>
+<p>We will add to the list of pending ids the ones that are not cached. We will keep the id and the resolve method, so we can resolve them afterwards with the right value. We cache the promise itself in the hashmap. This would allow us to cache also rejected promises for example. So we do not request over and over the same rejection. It is not used in this implementation, though.</p>
+<h3 id="scheduling-the-request">Scheduling the request</h3>
+<pre><code class="language-javascript">function scheduleSearch() {
+  if (pending.length &gt; 0 &amp;&amp; !scheduled) {
+    scheduled = true;
+    Promise.resolve().then(() =&gt;
+      process.nextTick(async () =&gt; {
+        await runSearch();
+        scheduled = false;
+      })
+    );
+  }
+}
+</code></pre>
+<p>That is where the magic happens. This function is short but is the most important one: We schedule/delay the request to the end of all the promises declarations.</p>
+<h3 id="executing-the-search">Executing the search</h3>
+<pre><code class="language-javascript">async function runSearch() {
+  const pendingCopy = pending.splice(0, pending.length);
+  pending = [];
+
+  if (pendingCopy.length &gt; 0) {
+    const results = await loadManyFn(pendingCopy.map((p) =&gt; p.id));
+    pendingCopy.forEach(({ resolve }, idx) =&gt; resolve(results[idx]));
+  }
+}
+</code></pre>
+<p>Clone the ids (so they can be accumulated again after the search completes) and call the loadManyFn so we can resolve the promises we had pending. Remember the requirements of loadMany to return the data in the right order and all the elements ? This is where it is needed. We can reference the results by index and resolve the right pending promises.</p>
+<p>Let's run it!</p>
+<h2 id="execution">Execution</h2>
+<p>Again the same request:</p>
+<pre><code class="language-text">http://localhost:3000/user-with-friends/1?levels=3
+</code></pre>
+<p>That produces the following output:</p>
+<pre><code class="language-text">GET /users?ids=1
+GET /users?ids=2,3
+GET /users?ids=4
+GET /users?ids=5
+</code></pre>
+<p>Exactly what we wanted.</p>
+<h2 id="conclusion">Conclusion</h2>
+<ul>
+<li>
+<p>Dataloader is a great package that should be in all developers toolbox. Specially the ones implementing Graphql or similar Apis.</p>
+</li>
+<li>
+<p>The resolvers in this example could be optimized but sometimes our requests are on different files at different levels that depend on some conditions. With Dataloader we can keep our file structure and code readability without damaging our performance, both on response time to our client and on number of requests spawn within our mesh.</p>
+</li>
+</ul>
+<p>Are you using Dataloader? Do you know any tool that accomplishes something similar? Do you now any other packages that in your opinion should be in all nodejs devs toolbox?</p>
+</article>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 My Blog</p>
+    </footer>
+  </body>
+</html>

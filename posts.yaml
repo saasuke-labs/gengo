@@ -1,0 +1,5 @@
+- slug: data-loader
+  markdown: blog/posts/data-loader.mdx
+  #title: "Hello World"
+  date: 2020-07-19
+  "tags": ["javascript", "dataloader"]

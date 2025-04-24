@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>{{ .Title }}</title>
+    <link rel="stylesheet" href="/styles.css" />
+    {{ if .Watch }}
+    <script>
+      const es = new EventSource("/reload");
+      es.onmessage = () => location.reload();
+    </script>
+    {{ end }}
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="/">Home</a>
+      </nav>
+    </header>
+
+    <main>
+      <article>{{ .HTML }}</article>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 My Blog</p>
+    </footer>
+  </body>
+</html>
