@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.3/litera/bootstrap.min.css"
+    />
+
+    <style>
+      pre {
+        border: 2px solid #ddd;
+        border-radius: 12px;
+        box-shadow: #eee 0px 0px 10px;
+        padding: 18px;
+      }
+    </style>
+    <title>Function call cascading considered harmful</title>
+    <link rel="stylesheet" href="/styles.css" />
+    
+  </head>
+  <body>
+    <div
+      class="navbar navbar-expand-lg fixed-top bg-primary"
+      data-bs-theme="dark"
+    >
+      <div class="container">
+        <a href="../" class="navbar-brand">Bootswatch</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarResponsive"
+          aria-controls="navbarResponsive"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+          <ul class="navbar-nav">
+            <li class="nav-item dropdown" data-bs-theme="light">
+              <a
+                class="nav-link dropdown-toggle"
+                data-bs-toggle="dropdown"
+                href="#"
+                id="themes"
+                >Themes</a
+              >
+              <div class="dropdown-menu" aria-labelledby="themes">
+                <a class="dropdown-item" href="../default/">Default</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="../brite/">Brite</a>
+                <a class="dropdown-item" href="../cerulean/">Cerulean</a>
+                <a class="dropdown-item" href="../cosmo/">Cosmo</a>
+                <a class="dropdown-item" href="../cyborg/">Cyborg</a>
+                <a class="dropdown-item" href="../darkly/">Darkly</a>
+                <a class="dropdown-item" href="../flatly/">Flatly</a>
+                <a class="dropdown-item" href="../journal/">Journal</a>
+                <a class="dropdown-item" href="../litera/">Litera</a>
+                <a class="dropdown-item" href="../lumen/">Lumen</a>
+                <a class="dropdown-item" href="../lux/">Lux</a>
+                <a class="dropdown-item" href="../materia/">Materia</a>
+                <a class="dropdown-item" href="../minty/">Minty</a>
+                <a class="dropdown-item" href="../morph/">Morph</a>
+                <a class="dropdown-item" href="../pulse/">Pulse</a>
+                <a class="dropdown-item" href="../quartz/">Quartz</a>
+                <a class="dropdown-item" href="../sandstone/">Sandstone</a>
+                <a class="dropdown-item" href="../simplex/">Simplex</a>
+                <a class="dropdown-item" href="../sketchy/">Sketchy</a>
+                <a class="dropdown-item" href="../slate/">Slate</a>
+                <a class="dropdown-item" href="../solar/">Solar</a>
+                <a class="dropdown-item" href="../spacelab/">Spacelab</a>
+                <a class="dropdown-item" href="../superhero/">Superhero</a>
+                <a class="dropdown-item" href="../united/">United</a>
+                <a class="dropdown-item" href="../vapor/">Vapor</a>
+                <a class="dropdown-item" href="../yeti/">Yeti</a>
+                <a class="dropdown-item" href="../zephyr/">Zephyr</a>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="../help/">Help</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://blog.bootswatch.com/">Blog</a>
+            </li>
+            <li class="nav-item dropdown" data-bs-theme="light">
+              <a
+                class="nav-link dropdown-toggle"
+                data-bs-toggle="dropdown"
+                href="#"
+                id="download"
+                >Litera</a
+              >
+              <div class="dropdown-menu" aria-labelledby="download">
+                <a
+                  class="dropdown-item"
+                  rel="noopener"
+                  target="_blank"
+                  href="https://jsfiddle.net/bootswatch/fz9q2h8u/"
+                  >Open in JSFiddle</a
+                >
+                <div class="dropdown-divider"></div>
+                <a
+                  class="dropdown-item"
+                  href="../5/litera/bootstrap.css"
+                  download=""
+                  >bootstrap.css</a
+                >
+                <a
+                  class="dropdown-item"
+                  href="../5/litera/bootstrap.min.css"
+                  download=""
+                  >bootstrap.min.css</a
+                >
+                <div class="dropdown-divider"></div>
+                <a
+                  class="dropdown-item"
+                  href="../5/litera/bootstrap.rtl.css"
+                  download=""
+                  >bootstrap.rtl.css</a
+                >
+                <a
+                  class="dropdown-item"
+                  href="../5/litera/bootstrap.rtl.min.css"
+                  download=""
+                  >bootstrap.rtl.min.css</a
+                >
+                <div class="dropdown-divider"></div>
+                <a
+                  class="dropdown-item"
+                  href="../5/litera/_variables.scss"
+                  download=""
+                  >_variables.scss</a
+                >
+                <a
+                  class="dropdown-item"
+                  href="../5/litera/_bootswatch.scss"
+                  download=""
+                  >_bootswatch.scss</a
+                >
+              </div>
+            </li>
+          </ul>
+          <ul class="navbar-nav ms-md-auto">
+            <li class="nav-item">
+              <a
+                target="_blank"
+                rel="noopener"
+                class="nav-link"
+                href="https://github.com/thomaspark/bootswatch/"
+                ><i class="bi bi-github"></i
+                ><span class="d-lg-none ms-2">GitHub</span></a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                target="_blank"
+                rel="noopener"
+                class="nav-link"
+                href="https://twitter.com/bootswatch"
+                ><i class="bi bi-twitter"></i
+                ><span class="d-lg-none ms-2">Twitter</span></a
+              >
+            </li>
+            <li class="nav-item py-2 py-lg-1 col-12 col-lg-auto">
+              <div class="vr d-none d-lg-flex h-100 mx-lg-2 text-white"></div>
+              <hr class="d-lg-none my-2 text-white-50" />
+            </li>
+            <li class="nav-item dropdown" data-bs-theme="light">
+              <a
+                class="nav-link dropdown-toggle d-flex align-items-center"
+                href="#"
+                id="version-menu"
+                aria-expanded="false"
+                data-bs-toggle="dropdown"
+                data-bs-display="static"
+                aria-label="Toggle theme"
+              >
+                <span class="d-lg-none me-2">Bootstrap </span>
+                <span>v5.3</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <a
+                    href="https://bootswatch.com/"
+                    class="dropdown-item d-flex align-items-center justify-content-between"
+                    aria-current="true"
+                  >
+                    <span class="ms-2">v5.3.x</span><i class="bi bi-check"></i>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://bootswatch.com/4/"
+                    class="dropdown-item d-flex align-items-center justify-content-between"
+                  >
+                    <span class="ms-2">v4.6.2</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://bootswatch.com/3/"
+                    class="dropdown-item d-flex align-items-center justify-content-between"
+                  >
+                    <span class="ms-2">v3.4.1</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://bootswatch.com/2/"
+                    class="dropdown-item d-flex align-items-center justify-content-between"
+                  >
+                    <span class="ms-2">v2.3.2</span>
+                  </a>
+                </li>
+                <li>
+                  <hr class="dropdown-divider" />
+                </li>
+                <li>
+                  <a
+                    href="https://github.com/thomaspark/bootswatch/tags"
+                    class="dropdown-item d-flex align-items-center justify-content-between"
+                  >
+                    <span class="ms-2">All versions</span>
+                  </a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item py-2 py-lg-1 col-12 col-lg-auto">
+              <div class="vr d-none d-lg-flex h-100 mx-lg-2 text-white"></div>
+              <hr class="d-lg-none my-2 text-white-50" />
+            </li>
+            <li class="nav-item dropdown" data-bs-theme="light">
+              <a
+                class="nav-link dropdown-toggle d-flex align-items-center"
+                href="#"
+                id="theme-menu"
+                aria-expanded="false"
+                data-bs-toggle="dropdown"
+                data-bs-display="static"
+                aria-label="Toggle theme"
+              >
+                <i class="bi bi-circle-half"></i>
+                <span class="d-lg-none ms-2">Toggle theme</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <button
+                    type="button"
+                    class="dropdown-item d-flex align-items-center"
+                    data-bs-theme-value="light"
+                    aria-pressed="false"
+                  >
+                    <i class="bi bi-sun-fill"></i
+                    ><span class="ms-2">Light</span>
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    class="dropdown-item d-flex align-items-center"
+                    data-bs-theme-value="dark"
+                    aria-pressed="true"
+                  >
+                    <i class="bi bi-moon-stars-fill"></i
+                    ><span class="ms-2">Dark</span>
+                  </button>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <article><h1 id="function-call-cascading-considered-harmful">Function call cascading considered harmful</h1>
+<h2 id="introduction">Introduction</h2>
+<p>Improving the reusability and composability of software components is a common goal we all strive for. However, more often than not, we find ourselves falling short without a clear understanding of why. Sometimes, we favor one approach over another without a solid rationale, labeling the differences as mere programming styles.</p>
+<p>In my case, I have a preference for writing code that reads like recipes. I strive to develop functions or components as if they will be utilized by multiple clients, even if that's not the current scenario. This personal style offers benefits such as reusability and testability, but I have also realized that it tends to veer toward overengineering, so it's important to keep that in check.</p>
+<p>During a recent refactoring process, I encountered a situation where the code followed a different style, and I found it more challenging to reason about, test, and reuse. Yet, I couldn't pinpoint a specific term or a clear, general rationale to explain why I felt that way.</p>
+<p>Upon reflection, I discovered the root of the problem, and with the help of Chat GPT, I uncovered the terms associated with those distinct styles.</p>
+<p>To illustrate the problem clearly and make it more apparent, I will provide an example.</p>
+<h2 id="the-problem">The problem</h2>
+<p>Consider a web application that processes user registrations. When a new user signs up, various tasks need to be performed, such as validating the user's data, creating a user account, sending a confirmation email, and logging the registration event.</p>
+<h3 id="function-call-cascading">Function call cascading</h3>
+<p>One way of implementing this functionality is using function call cascading.<br />
+We can visualize it as a sequence:</p>
+<pre><code class="language-mermaid">
+  sequenceDiagram
+
+  actor Client
+  participant registerUser
+  participant validateUser
+  participant createUser
+  participant sendConfirmationEmail
+  participant logRegistration
+
+  registerUser -&gt;&gt; validateUser: userData
+  validateUser -&gt;&gt; createUser: userData
+  createUser -&gt;&gt; sendConfirmationEmail: userData
+  sendConfirmationEmail -&gt;&gt; logRegistration: userData
+</code></pre>
+<p>And the code would look like:</p>
+<pre tabindex="0" style="background-color:#fff;"><code><span style="display:flex;"><span><span style="color:#000;font-weight:bold">function</span> registerUser(userData) {
+</span></span><span style="display:flex;"><span>  validateUser(userData);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">function</span> validateUser(userData) {
+</span></span><span style="display:flex;"><span>  <span style="color:#000;font-weight:bold">if</span> (userData.username <span style="color:#000;font-weight:bold">&amp;&amp;</span> userData.email <span style="color:#000;font-weight:bold">&amp;&amp;</span> userData.password) {
+</span></span><span style="display:flex;"><span>    createUser(userData);
+</span></span><span style="display:flex;"><span>  } <span style="color:#000;font-weight:bold">else</span> {
+</span></span><span style="display:flex;"><span>    console.log(<span style="color:#d14">&#34;Invalid user data.&#34;</span>);
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">function</span> createUser(userData) {
+</span></span><span style="display:flex;"><span>  <span style="color:#998;font-style:italic">// Logic to create a user account
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span>
+</span></span><span style="display:flex;"><span>  sendConfirmationEmail(userData);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">function</span> sendConfirmationEmail(userData) {
+</span></span><span style="display:flex;"><span>  <span style="color:#998;font-style:italic">// Logic to send a confirmation email
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span>
+</span></span><span style="display:flex;"><span>  logRegistration(userData);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">function</span> logRegistration(userData) {
+</span></span><span style="display:flex;"><span>  <span style="color:#998;font-style:italic">// Logic to log the registration event
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span>
+</span></span><span style="display:flex;"><span>  console.log(<span style="color:#d14">&#34;User registration completed.&#34;</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre><p>The code will run in sequence, one function after another. If one function fails the next<br />
+one will not be executed.</p>
+<p>From a functional point of view, this works as expected and <code>registerUser</code> will do what<br />
+it is intended to.</p>
+<h3 id="function-orchestration">Function Orchestration</h3>
+<blockquote>
+<p>Function orchestration: a component organizes and decides the order and need to execute a given set<br />
+of functions. (I had some troubles naming this style. Let me know if there are better / existing names)</p>
+</blockquote>
+<p>Another way to implement the same functionality is to use a recipe-like sequence of functions<br />
+to be executed.</p>
+<p>As a sequence it would look like:</p>
+<pre><code class="language-mermaid">
+  sequenceDiagram
+
+  actor Client
+  participant registerUser
+  participant validateUser
+  participant createUser
+  participant sendConfirmationEmail
+  participant logRegistration
+
+  registerUser -&gt;&gt; validateUser: userData
+  registerUser -&gt;&gt; createUser: userData
+  registerUser -&gt;&gt; sendConfirmationEmail: userData
+  registerUser -&gt;&gt; logRegistration: userData
+</code></pre>
+<p>And this is the code:</p>
+<pre tabindex="0" style="background-color:#fff;"><code><span style="display:flex;"><span><span style="color:#000;font-weight:bold">function</span> registerUser(userData) {
+</span></span><span style="display:flex;"><span>  <span style="color:#000;font-weight:bold">if</span> (validateUser(userData)) {
+</span></span><span style="display:flex;"><span>    createUser(userData);
+</span></span><span style="display:flex;"><span>    sendConfirmationEmail(userData);
+</span></span><span style="display:flex;"><span>    logRegistration(userData);
+</span></span><span style="display:flex;"><span>    console.log(<span style="color:#d14">&#34;User registration completed.&#34;</span>);
+</span></span><span style="display:flex;"><span>  } <span style="color:#000;font-weight:bold">else</span> {
+</span></span><span style="display:flex;"><span>    console.log(<span style="color:#d14">&#34;Invalid user data.&#34;</span>);
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">function</span> validateUser(userData) {
+</span></span><span style="display:flex;"><span>  <span style="color:#000;font-weight:bold">return</span> userData.username <span style="color:#000;font-weight:bold">&amp;&amp;</span> userData.email <span style="color:#000;font-weight:bold">&amp;&amp;</span> userData.password;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">function</span> createUser(userData) {
+</span></span><span style="display:flex;"><span>  <span style="color:#998;font-style:italic">// Logic to create a user account
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">function</span> sendConfirmationEmail(userData) {
+</span></span><span style="display:flex;"><span>  <span style="color:#998;font-style:italic">// Logic to send a confirmation email
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">function</span> logRegistration(userData) {
+</span></span><span style="display:flex;"><span>  <span style="color:#998;font-style:italic">// Logic to log the registration event
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span>}
+</span></span></code></pre><h2 id="analysis">Analysis</h2>
+<p>Although the example is very basic and might be obvious that something is off in the first example,<br />
+I have seen this style in multiple projects I have worked on. Usually hidden in complex logic.</p>
+<p>In the following subsections you can find some of the reasons why the second approach should be preferred.</p>
+<h3 id="objective-coupling">Objective coupling</h3>
+<p>When employing function call cascading, all functions become tightly coupled to the objectives of the functions they call down the line.</p>
+<p>For instance, let's consider the <code>registerUser</code> function with the following goals:</p>
+<ul>
+<li>Validate user</li>
+<li>Create user</li>
+<li>Send confirmation email</li>
+<li>Log registration</li>
+</ul>
+<p>In this case, the <code>validateUser</code> function will <strong>inherit</strong> the same goals as <code>registerUser</code>. Similarly, the <code>createUser</code> function will inherit all goals except for the validation of the user, and so on.</p>
+<pre><code class="language-mermaid">
+flowchart LR
+
+subgraph Functions
+  registerUser
+  validateUser
+  createUser
+  sendConfirmationEmail
+  logRegistration
+end
+
+subgraph Goals
+  validate-user[validate user]
+  create-user[create user]
+  send-confirmation-email[send confirmation email]
+  log-registration[log registration]
+end
+
+registerUser --&gt; validateUser
+registerUser -.- validate-user
+registerUser -.- create-user
+registerUser -.- send-confirmation-email
+registerUser -.- log-registration
+
+
+validateUser --&gt; createUser
+validateUser -.-&gt;validate-user
+validateUser -.- create-user
+validateUser -.- send-confirmation-email
+validateUser -.- log-registration
+
+
+createUser --&gt; sendConfirmationEmail
+createUser -.-&gt;create-user
+createUser -.- send-confirmation-email
+createUser -.- log-registration
+
+
+sendConfirmationEmail --&gt; logRegistration
+sendConfirmationEmail -.-&gt;send-confirmation-email
+sendConfirmationEmail -.- log-registration
+
+
+logRegistration -.-&gt;log-registration
+</code></pre>
+<pre><code class="language-mermaid">
+flowchart LR
+
+subgraph Functions
+  registerUser
+  validateUser
+  createUser
+  sendConfirmationEmail
+  logRegistration
+end
+
+subgraph Goals
+  validate-user[validate user]
+  create-user[create user]
+  send-confirmation-email[send confirmation email]
+  log-registration[log registration]
+end
+
+registerUser --&gt; validateUser
+registerUser --&gt; createUser
+registerUser --&gt; sendConfirmationEmail
+registerUser --&gt; logRegistration
+
+registerUser -.- validate-user
+registerUser -.- create-user
+registerUser -.- send-confirmation-email
+registerUser -.- log-registration
+
+
+validateUser -.-&gt;validate-user
+
+createUser -.-&gt;create-user
+
+sendConfirmationEmail -.-&gt;send-confirmation-email
+
+logRegistration -.-&gt;log-registration
+</code></pre>
+<p>This means that I cannot use any of the intermediate functions in a different context than the one aimed at achieving all those goals.</p>
+<p>I intentionally use the term <strong>inherit</strong> because the problem is reminiscent of the issues that arise when using inheritance for code reusability.</p>
+<h3 id="single-responsibility">Single responsibility</h3>
+<p>In line with the issue of objective coupling, every function that calls another function becomes coupled with the responsibilities of the subsequent function. While this coupling may make sense in some cases, such as the <code>registerUser</code> function being responsible for all the effects (storing in a database, sending emails, etc.) related to user registration, even if it delegates each effect to a specific function.</p>
+<p>On the other hand, the <code>validateUser</code> function should solely be responsible for user validation. However, by utilizing function call cascading, we inadvertently introduce the responsibility of creating a user, sending emails, and so on.</p>
+<h3 id="testing">Testing</h3>
+<p>When conducting integration testing on the <code>registerUser</code> function (or any other top-level entry point), it becomes necessary to mock the entire I/O environment to ensure</p>
+<p>correct behavior. However, it would be preferable to conduct unit tests on the individual composed functions in isolation.</p>
+<p>As a result of the objective and responsibility coupling, when function call cascading is used, we find ourselves obligated to mock the environment for testing each of the composed functions as well.</p>
+<blockquote>
+<p>It's worth noting that certain languages, like Python with pytest fixtures, provide mechanisms that facilitate the mocking of intermediate functions.</p>
+</blockquote>
+<h2 id="conclusion">Conclusion</h2>
+<p>In general, to enhance code reusability, testability, readability, and more, it is crucial to be self-conscious when encountering deep function call cascades.<br />
+Take a moment to consider whether the flow you are attempting to describe could be flattened and written as a recipe instead.<br />
+I firmly believe that by keeping a vigilant eye on this aspect, we can improve both our code and our overall development experiences.</p>
+<h3 id="but">But...</h3>
+<p>As most (interesting and fun) things in software, decisions on what is best depends on the context of the decision<br />
+and creating general rules is oversimplistic.</p>
+<p>As a counter example of my own post, there are some patterns that promote the use of function call cascading while<br />
+maintaining the flexibility of the system.<br />
+For example when we use <a href="https://refactoring.guru/design-patterns/chain-of-responsibility">Chain of responsibility</a> like<br />
+in middlewares, each middleware will call the next. But each of them are unaware of what middleware is next since<br />
+that decision is taken in another component, and therefore the middlewares can be plugged together in any way.</p>
+</article>
+    </div>
+
+    <footer>
+      <p>&copy; 2025 My Blog</p>
+    </footer>
+  </body>
+</html>

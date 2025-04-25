@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.3/litera/bootstrap.min.css"
+    />
+
+    <style>
+      pre {
+        border: 2px solid #ddd;
+        border-radius: 12px;
+        box-shadow: #eee 0px 0px 10px;
+        padding: 18px;
+      }
+    </style>
+    <title>Docker Registry Local Mirror</title>
+    <link rel="stylesheet" href="/styles.css" />
+    
+  </head>
+  <body>
+    <div
+      class="navbar navbar-expand-lg fixed-top bg-primary"
+      data-bs-theme="dark"
+    >
+      <div class="container">
+        <a href="../" class="navbar-brand">Bootswatch</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarResponsive"
+          aria-controls="navbarResponsive"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+          <ul class="navbar-nav">
+            <li class="nav-item dropdown" data-bs-theme="light">
+              <a
+                class="nav-link dropdown-toggle"
+                data-bs-toggle="dropdown"
+                href="#"
+                id="themes"
+                >Themes</a
+              >
+              <div class="dropdown-menu" aria-labelledby="themes">
+                <a class="dropdown-item" href="../default/">Default</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="../brite/">Brite</a>
+                <a class="dropdown-item" href="../cerulean/">Cerulean</a>
+                <a class="dropdown-item" href="../cosmo/">Cosmo</a>
+                <a class="dropdown-item" href="../cyborg/">Cyborg</a>
+                <a class="dropdown-item" href="../darkly/">Darkly</a>
+                <a class="dropdown-item" href="../flatly/">Flatly</a>
+                <a class="dropdown-item" href="../journal/">Journal</a>
+                <a class="dropdown-item" href="../litera/">Litera</a>
+                <a class="dropdown-item" href="../lumen/">Lumen</a>
+                <a class="dropdown-item" href="../lux/">Lux</a>
+                <a class="dropdown-item" href="../materia/">Materia</a>
+                <a class="dropdown-item" href="../minty/">Minty</a>
+                <a class="dropdown-item" href="../morph/">Morph</a>
+                <a class="dropdown-item" href="../pulse/">Pulse</a>
+                <a class="dropdown-item" href="../quartz/">Quartz</a>
+                <a class="dropdown-item" href="../sandstone/">Sandstone</a>
+                <a class="dropdown-item" href="../simplex/">Simplex</a>
+                <a class="dropdown-item" href="../sketchy/">Sketchy</a>
+                <a class="dropdown-item" href="../slate/">Slate</a>
+                <a class="dropdown-item" href="../solar/">Solar</a>
+                <a class="dropdown-item" href="../spacelab/">Spacelab</a>
+                <a class="dropdown-item" href="../superhero/">Superhero</a>
+                <a class="dropdown-item" href="../united/">United</a>
+                <a class="dropdown-item" href="../vapor/">Vapor</a>
+                <a class="dropdown-item" href="../yeti/">Yeti</a>
+                <a class="dropdown-item" href="../zephyr/">Zephyr</a>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="../help/">Help</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://blog.bootswatch.com/">Blog</a>
+            </li>
+            <li class="nav-item dropdown" data-bs-theme="light">
+              <a
+                class="nav-link dropdown-toggle"
+                data-bs-toggle="dropdown"
+                href="#"
+                id="download"
+                >Litera</a
+              >
+              <div class="dropdown-menu" aria-labelledby="download">
+                <a
+                  class="dropdown-item"
+                  rel="noopener"
+                  target="_blank"
+                  href="https://jsfiddle.net/bootswatch/fz9q2h8u/"
+                  >Open in JSFiddle</a
+                >
+                <div class="dropdown-divider"></div>
+                <a
+                  class="dropdown-item"
+                  href="../5/litera/bootstrap.css"
+                  download=""
+                  >bootstrap.css</a
+                >
+                <a
+                  class="dropdown-item"
+                  href="../5/litera/bootstrap.min.css"
+                  download=""
+                  >bootstrap.min.css</a
+                >
+                <div class="dropdown-divider"></div>
+                <a
+                  class="dropdown-item"
+                  href="../5/litera/bootstrap.rtl.css"
+                  download=""
+                  >bootstrap.rtl.css</a
+                >
+                <a
+                  class="dropdown-item"
+                  href="../5/litera/bootstrap.rtl.min.css"
+                  download=""
+                  >bootstrap.rtl.min.css</a
+                >
+                <div class="dropdown-divider"></div>
+                <a
+                  class="dropdown-item"
+                  href="../5/litera/_variables.scss"
+                  download=""
+                  >_variables.scss</a
+                >
+                <a
+                  class="dropdown-item"
+                  href="../5/litera/_bootswatch.scss"
+                  download=""
+                  >_bootswatch.scss</a
+                >
+              </div>
+            </li>
+          </ul>
+          <ul class="navbar-nav ms-md-auto">
+            <li class="nav-item">
+              <a
+                target="_blank"
+                rel="noopener"
+                class="nav-link"
+                href="https://github.com/thomaspark/bootswatch/"
+                ><i class="bi bi-github"></i
+                ><span class="d-lg-none ms-2">GitHub</span></a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                target="_blank"
+                rel="noopener"
+                class="nav-link"
+                href="https://twitter.com/bootswatch"
+                ><i class="bi bi-twitter"></i
+                ><span class="d-lg-none ms-2">Twitter</span></a
+              >
+            </li>
+            <li class="nav-item py-2 py-lg-1 col-12 col-lg-auto">
+              <div class="vr d-none d-lg-flex h-100 mx-lg-2 text-white"></div>
+              <hr class="d-lg-none my-2 text-white-50" />
+            </li>
+            <li class="nav-item dropdown" data-bs-theme="light">
+              <a
+                class="nav-link dropdown-toggle d-flex align-items-center"
+                href="#"
+                id="version-menu"
+                aria-expanded="false"
+                data-bs-toggle="dropdown"
+                data-bs-display="static"
+                aria-label="Toggle theme"
+              >
+                <span class="d-lg-none me-2">Bootstrap </span>
+                <span>v5.3</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <a
+                    href="https://bootswatch.com/"
+                    class="dropdown-item d-flex align-items-center justify-content-between"
+                    aria-current="true"
+                  >
+                    <span class="ms-2">v5.3.x</span><i class="bi bi-check"></i>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://bootswatch.com/4/"
+                    class="dropdown-item d-flex align-items-center justify-content-between"
+                  >
+                    <span class="ms-2">v4.6.2</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://bootswatch.com/3/"
+                    class="dropdown-item d-flex align-items-center justify-content-between"
+                  >
+                    <span class="ms-2">v3.4.1</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://bootswatch.com/2/"
+                    class="dropdown-item d-flex align-items-center justify-content-between"
+                  >
+                    <span class="ms-2">v2.3.2</span>
+                  </a>
+                </li>
+                <li>
+                  <hr class="dropdown-divider" />
+                </li>
+                <li>
+                  <a
+                    href="https://github.com/thomaspark/bootswatch/tags"
+                    class="dropdown-item d-flex align-items-center justify-content-between"
+                  >
+                    <span class="ms-2">All versions</span>
+                  </a>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item py-2 py-lg-1 col-12 col-lg-auto">
+              <div class="vr d-none d-lg-flex h-100 mx-lg-2 text-white"></div>
+              <hr class="d-lg-none my-2 text-white-50" />
+            </li>
+            <li class="nav-item dropdown" data-bs-theme="light">
+              <a
+                class="nav-link dropdown-toggle d-flex align-items-center"
+                href="#"
+                id="theme-menu"
+                aria-expanded="false"
+                data-bs-toggle="dropdown"
+                data-bs-display="static"
+                aria-label="Toggle theme"
+              >
+                <i class="bi bi-circle-half"></i>
+                <span class="d-lg-none ms-2">Toggle theme</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <button
+                    type="button"
+                    class="dropdown-item d-flex align-items-center"
+                    data-bs-theme-value="light"
+                    aria-pressed="false"
+                  >
+                    <i class="bi bi-sun-fill"></i
+                    ><span class="ms-2">Light</span>
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    class="dropdown-item d-flex align-items-center"
+                    data-bs-theme-value="dark"
+                    aria-pressed="true"
+                  >
+                    <i class="bi bi-moon-stars-fill"></i
+                    ><span class="ms-2">Dark</span>
+                  </button>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <article><h1 id="docker-registry-local-mirror">Docker Registry Local Mirror</h1>
+<h2 id="why-i-needed-it">Why I needed it</h2>
+<p>I recently started working on some personal projects to do and learn things that I had in my TODO list for a very long time.<br />
+One the moments when I work on it is during my (long) commuting times when I go to the office or somewhere else by train.<br />
+In order to get my docker images I need internet connection provided by my phone and it brings a couple of problems:</p>
+<ul>
+<li>I don't have a large amount of GB per month so I am exhausting my available data pretty soon.</li>
+<li>When I am in tunnels, etc. the connection is dropped.</li>
+</ul>
+<p>When docker images are new, there is no way to escape it, but I usually use the same docker images for the same projects. Once they<br />
+are downloaded there is no problem but I like keeping the amount of images in my system under control, so I want to be able to do:</p>
+<pre tabindex="0" style="background-color:#fff;"><code><span style="display:flex;"><span>docker rmi -f <span style="color:#000;font-weight:bold">$(</span>docker images -aq<span style="color:#000;font-weight:bold">)</span>
+</span></span></code></pre><p>often.</p>
+<p>I thought that if would be cool to have a mirror of the docker registry with the images I use so I can keep running this command and <code>pull</code> the images<br />
+from my computer.</p>
+<p>That's why I decided to try out and add a docker registri mirror in my machine. And it turned out much easier than I expected.</p>
+<h2 id="how-it-works">How it works</h2>
+<!-- raw HTML omitted -->
+<pre><code class="language-mermaid">sequenceDiagram
+
+actor me
+participant DockerDaemon
+participant RegistryMirror
+participant DockerRegistry
+
+
+me -&gt;&gt;+ DockerDaemon: docker-compose(up)
+DockerDaemon -&gt;&gt; RegistryMirror: start
+DockerDaemon --&gt;&gt;- me: ok
+
+rect rgb(200,230,250)
+    note right of me: Online / First pull
+
+    me -&gt;&gt;+ DockerDaemon: pull(ubuntu)
+    DockerDaemon -&gt;&gt; RegistryMirror: pull(ubuntu)
+    RegistryMirror -&gt;&gt; DockerRegistry: pull(ubuntu)
+    DockerRegistry --&gt;&gt; RegistryMirror: ubuntu
+    RegistryMirror -&gt;&gt; RegistryMirror: store(ubuntu)
+    RegistryMirror --&gt;&gt; DockerDaemon: ubuntu
+    DockerDaemon --&gt;&gt; me: 
+end
+
+rect rgb(200,230,250)
+    note right of me: Offline / Second pull
+
+    me -&gt;&gt;+ DockerDaemon: pull(ubuntu)
+    DockerDaemon -&gt;&gt; RegistryMirror: pull(ubuntu)
+    RegistryMirror --&gt;&gt; DockerDaemon: ubuntu
+    DockerDaemon --&gt;&gt; me: 
+end
+
+rect rgb(200,230,250)
+    note right of me: Offline / First pull
+
+    me -&gt;&gt;+ DockerDaemon: pull(alpine)
+    DockerDaemon -&gt;&gt; RegistryMirror: pull(alpine)
+    RegistryMirror -x DockerRegistry: pull(alpine)
+    RegistryMirror --x DockerDaemon: error
+    DockerDaemon --x me: error
+end
+</code></pre>
+<!-- raw HTML omitted -->
+<p><img src="https://tsoobame.github.io/images/posts/docker-registry-mermaid.png" alt="docker registry sequence diagram" /><br />
+<!-- raw HTML omitted -->I did not configure mermaid in my blog yet. I will replace the image with the diagram when it is ready<!-- raw HTML omitted --></p>
+<h2 id="how-can-you-use-it">How can you use it</h2>
+<p>The code and the explanation on how to use it can be found in the <a href="https://github.com/tonitienda/docker-registry-mirror">docker-registry-mirror repository</a>.</p>
+<p>Happy (and low data usage) programming!</p>
+</article>
+    </div>
+
+    <footer>
+      <p>&copy; 2025 My Blog</p>
+    </footer>
+  </body>
+</html>

@@ -1,68 +1,79 @@
 package main
 
 import (
-	"bytes"
+	"blog-down/pkg/cli"
+	"blog-down/pkg/generator"
 	_ "embed"
 	"fmt"
-	"html/template"
-	"io/fs"
-	"log"
-	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
+	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cobra"
-	"github.com/yuin/goldmark"
-	highlighting "github.com/yuin/goldmark-highlighting"
-	"github.com/yuin/goldmark/ast"
-	"github.com/yuin/goldmark/extension"
 	_ "github.com/yuin/goldmark/extension"
-	"github.com/yuin/goldmark/parser"
-	"github.com/yuin/goldmark/renderer/html"
-	"github.com/yuin/goldmark/text"
-	"gopkg.in/yaml.v3"
 )
 
-var (
-	watchMode     bool
-	sseClients    = make(map[chan string]bool)
-	sseRegister   = make(chan chan string)
-	sseUnregister = make(chan chan string)
-)
+// var (
+// 	sseClients    = make(map[chan string]bool)
+// 	sseRegister   = make(chan chan string)
+// 	sseUnregister = make(chan chan string)
+// )
 
-type PostMeta struct {
-	Slug     string   `yaml:"slug"`
-	Title    string   `yaml:"title"`
-	Date     string   `yaml:"date"`
-	Tags     []string `yaml:"tags"`
-	Markdown string   `yaml:"markdown"`
+func execGenerateSite(postsPath, outputPath string, watchMode bool) {
+	ch, filesProgress := generator.GenerateSiteAsync(postsPath, outputPath, watchMode)
+
+	files := []string{}
+	filesStatuses := map[string]generator.FileStatus{}
+	completed := 0
+
+	for _, fileProgress := range filesProgress {
+		files = append(files, fileProgress.Filename)
+		filesStatuses[fileProgress.Filename] = fileProgress.Status
+	}
+
+	cli.UpdateScreen("Files progress:", files, filesStatuses, completed, len(files))
+
+	fmt.Println("Waiting for updates...")
+	for {
+		select {
+		case progress, ok := <-ch:
+			if !ok {
+				// Channel closed, processing complete
+				fmt.Println("Channel closed")
+				return
+			}
+
+			fmt.Println("Received update:", progress.Filename, progress.Status)
+			// Update our state
+			filesStatuses[progress.Filename] = progress.Status
+			if progress.Status == generator.Completed || progress.Status == generator.Failed {
+				completed++
+			}
+			cli.UpdateScreen("Files progress:", files, filesStatuses, completed, len(files))
+
+		default:
+			// No updates available, wait a bit before refreshing
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+
 }
 
-type SiteData struct {
-	Title string
-	HTML  template.HTML
-	Watch bool
-}
+func executeCLI() {
 
-//go:embed templates/layout.html
-var layoutHTML string
-
-func main() {
 	var postsPath string
 	var outputPath string
+	var watchMode bool
+
 	var rootCmd = &cobra.Command{
 		Use:   "mdsite",
 		Short: "Static site generator from Markdown",
 		Run: func(cmd *cobra.Command, args []string) {
-			generateSite(postsPath, outputPath)
-			if watchMode {
-				go startSSEServer()
-				go serveOutput(outputPath)
-				watchAndRebuild(postsPath, outputPath)
-				select {}
-			}
+			execGenerateSite(postsPath, outputPath, watchMode)
+			// if watchMode {
+			// 	go startSSEServer()
+			// 	go serveOutput(outputPath)
+			// 	watchAndRebuild(postsPath, outputPath)
+			// 	select {}
+			// }
 		},
 	}
 
@@ -70,178 +81,110 @@ func main() {
 	rootCmd.Flags().StringVar(&outputPath, "output", "output", "Output directory")
 	rootCmd.Flags().BoolVar(&watchMode, "watch", false, "Enable watch mode with hot reload")
 	rootCmd.Execute()
+
 }
 
-func generateSite(postsPath, outputPath string) {
-	data, err := os.ReadFile(postsPath)
-	if err != nil {
-		log.Fatalf("failed to read posts file: %v", err)
-	}
-	var posts []PostMeta
-	if err := yaml.Unmarshal(data, &posts); err != nil {
-		log.Fatalf("failed to parse YAML: %v", err)
-	}
+func main() {
+	executeCLI()
 
-	fmt.Println("POSTS:", posts)
+	// files := []string{"file1.md", "file2.md", "file3.md"}
+	// statuses := []cli.FileStatus{cli.Started, cli.Completed}
 
-	md := goldmark.New(
-		goldmark.WithExtensions(extension.GFM, highlighting.NewHighlighting(
-			// highlighting.WithFormatOptions(
-			// 	htmlchroma.WithLineNumbers(true),
-			// ),
-			highlighting.WithStyle("github"), // choose a theme
-			highlighting.WithGuessLanguage(false),
-		)),
-		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
-		goldmark.WithRendererOptions(html.WithHardWraps(), html.WithXHTML()),
-	)
-	tmpl := template.Must(template.New("layout").Parse(layoutHTML))
+	// fileStatuses := map[string]cli.FileStatus{}
+	// for _, file := range files {
+	// 	fileStatuses[file] = cli.Pending
+	// }
 
-	os.MkdirAll(outputPath, 0755)
-	for _, post := range posts {
-		content, err := os.ReadFile(post.Markdown)
-		if err != nil {
-			log.Printf("failed to read %s: %v", post.Markdown, err)
-			continue
-		}
-		var buf bytes.Buffer
-		context := parser.NewContext()
-		doc := md.Parser().Parse(text.NewReader(content), parser.WithContext(context))
-		printAST(doc, content)
+	// i := 0
+	// status := 0
+	// completed := 0
 
-		title := post.Title
-		if title == "" {
-			if h1 := findFirstH1(doc, content); h1 != "" {
-				title = h1
-			}
-		}
-		if post.Slug == "" {
-			post.Slug = slugify(title)
-		}
+	// for {
+	// 	status = (status + 1) % len(statuses)
 
-		md.Renderer().Render(&buf, content, doc)
+	// 	if status == 0 {
+	// 		i++
+	// 	}
 
-		outFile := filepath.Join(outputPath, post.Slug+".html")
-		f, err := os.Create(outFile)
-		if err != nil {
-			log.Printf("failed to create output file: %v", err)
-			continue
-		}
+	// 	if status == len(statuses)-1 {
+	// 		completed++
+	// 	}
+	// 	fileStatuses[files[i]] = statuses[status]
 
-		fmt.Println("Generated html:", buf.String())
-		tmpl.Execute(f, SiteData{
-			Title: title,
-			HTML:  template.HTML(buf.String()),
-			Watch: watchMode,
-		})
-		f.Close()
-	}
+	// 	cli.UpdateScreen("This is a test", files, fileStatuses, completed, len(files))
+	// 	time.Sleep(1 * time.Second)
+
+	// }
+
 }
 
-func printAST(node ast.Node, source []byte) {
-	for n := node.FirstChild(); n != nil; n = n.NextSibling() {
-		switch n := n.(type) {
-		case *ast.Heading:
-			fmt.Printf("\nHeading: %d %s\n", n.Level, n.Text(source))
-		case *ast.FencedCodeBlock:
-			fmt.Printf("\nCode Block: %s \n%s\n\n", (*ast.FencedCodeBlock)(n).Language(source), n.Lines().Value(source))
-		case *ast.Paragraph:
-			fmt.Printf("\nParagraph: %s \n", (*ast.Paragraph)(n).Lines().Value(source))
-		case *ast.Text:
-			fmt.Printf("\nText: %s \n", (*ast.Text)(n).Value(source))
-		case *ast.HTMLBlock:
-			fmt.Printf("\nHTML Block: %s\n", n.Text(source))
-		default:
-			fmt.Printf("\nNode: %T\n", n)
-		}
-		printAST(n, source)
-	}
-}
+// func watchAndRebuild(postsPath, outputPath string) {
+// 	w, _ := fsnotify.NewWatcher()
+// 	defer w.Close()
+// 	//contentDir := filepath.Dir(postsPath)
+// 	w.Add(postsPath)
+// 	w.Add("templates")
+// 	filepath.WalkDir("content", func(path string, d fs.DirEntry, err error) error {
+// 		if !d.IsDir() && strings.HasSuffix(path, ".md") {
+// 			w.Add(path)
+// 		}
+// 		return nil
+// 	})
+// 	for {
+// 		select {
+// 		case <-w.Events:
+// 			generator.GenerateSite(postsPath, outputPath, true)
+// 			broadcastReload()
+// 		case err := <-w.Errors:
+// 			log.Println("watch error:", err)
+// 		}
+// 	}
+// }
 
-func findFirstH1(doc ast.Node, source []byte) string {
-	for n := doc.FirstChild(); n != nil; n = n.NextSibling() {
-		if h, ok := n.(*ast.Heading); ok && h.Level == 1 {
-			return string(h.Text(source))
-		}
-	}
-	return ""
-}
+// func serveOutput(outputPath string) {
+// 	http.Handle("/", http.FileServer(http.Dir(outputPath)))
+// 	http.HandleFunc("/reload", handleSSE)
+// 	log.Println("Serving on http://localhost:8080")
+// 	http.ListenAndServe(":8080", nil)
+// }
 
-func slugify(s string) string {
-	s = strings.ToLower(s)
-	s = strings.ReplaceAll(s, " ", "-")
-	s = strings.ReplaceAll(s, ".", "")
-	s = strings.ReplaceAll(s, "/", "")
-	return s
-}
+// func handleSSE(w http.ResponseWriter, r *http.Request) {
+// 	flusher, ok := w.(http.Flusher)
+// 	if !ok {
+// 		http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
+// 		return
+// 	}
+// 	w.Header().Set("Content-Type", "text/event-stream")
+// 	w.Header().Set("Cache-Control", "no-cache")
+// 	w.Header().Set("Connection", "keep-alive")
+// 	client := make(chan string)
+// 	sseRegister <- client
+// 	defer func() { sseUnregister <- client }()
+// 	for {
+// 		select {
+// 		case <-client:
+// 			fmt.Fprintf(w, "data: reload\n\n")
+// 			flusher.Flush()
+// 		case <-r.Context().Done():
+// 			return
+// 		}
+// 	}
+// }
 
-func watchAndRebuild(postsPath, outputPath string) {
-	w, _ := fsnotify.NewWatcher()
-	defer w.Close()
-	//contentDir := filepath.Dir(postsPath)
-	w.Add(postsPath)
-	w.Add("templates")
-	filepath.WalkDir("content", func(path string, d fs.DirEntry, err error) error {
-		if !d.IsDir() && strings.HasSuffix(path, ".md") {
-			w.Add(path)
-		}
-		return nil
-	})
-	for {
-		select {
-		case <-w.Events:
-			generateSite(postsPath, outputPath)
-			broadcastReload()
-		case err := <-w.Errors:
-			log.Println("watch error:", err)
-		}
-	}
-}
+// func startSSEServer() {
+// 	for {
+// 		select {
+// 		case c := <-sseRegister:
+// 			sseClients[c] = true
+// 		case c := <-sseUnregister:
+// 			delete(sseClients, c)
+// 			close(c)
+// 		}
+// 	}
+// }
 
-func serveOutput(outputPath string) {
-	http.Handle("/", http.FileServer(http.Dir(outputPath)))
-	http.HandleFunc("/reload", handleSSE)
-	log.Println("Serving on http://localhost:8080")
-	http.ListenAndServe(":8080", nil)
-}
-
-func handleSSE(w http.ResponseWriter, r *http.Request) {
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-	client := make(chan string)
-	sseRegister <- client
-	defer func() { sseUnregister <- client }()
-	for {
-		select {
-		case <-client:
-			fmt.Fprintf(w, "data: reload\n\n")
-			flusher.Flush()
-		case <-r.Context().Done():
-			return
-		}
-	}
-}
-
-func startSSEServer() {
-	for {
-		select {
-		case c := <-sseRegister:
-			sseClients[c] = true
-		case c := <-sseUnregister:
-			delete(sseClients, c)
-			close(c)
-		}
-	}
-}
-
-func broadcastReload() {
-	for c := range sseClients {
-		c <- "reload"
-	}
-}
+// func broadcastReload() {
+// 	for c := range sseClients {
+// 		c <- "reload"
+// 	}
+// }

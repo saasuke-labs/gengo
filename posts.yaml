@@ -1,9 +1,27 @@
-- slug: data-loader
-  markdown: blog/posts/data-loader.mdx
+- markdown: blog/posts/data-loader.mdx
   date: 2020-07-19
   "tags": ["javascript", "dataloader"]
 
-- slug: talk-think-code
-  markdown: blog/posts/talk-think-code.mdx
+- markdown: blog/posts/talk-think-code.mdx
   date: 2024-03-26
   "tags": ["software", "tdd", "pair programming"]
+
+- markdown: blog/posts/docker-registry-mirror.mdx
+  date: 2022-09-05
+  "tags": ["docker", "development", "tools"]
+
+- markdown: blog/posts/function-call-cascading.mdx
+  date: 2019-04-26
+  "tags": ["software", "anti-patterns", "composition"]
+
+- markdown: blog/posts/resume-driven-development.mdx
+  date: 2024-04-01
+  "tags": ["software", "design", "project", "boring"]
+
+- markdown: blog/posts/shape-vs-optionality.mdx
+  date: 2022-08-28
+  "tags": ["schemas", "simplicity", "information"]
+
+- markdown: blog/posts/graphql-schema-stitching.mdx
+  date: 2019-04-26
+  "tags": ["javascript", "graphql", "api"]
