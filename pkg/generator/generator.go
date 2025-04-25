@@ -20,17 +20,33 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type HeroImage struct {
+	Url         string `yaml:"url"`
+	Attribution struct {
+		Author string `yaml:"author"`
+		Url    string `yaml:"url"`
+	} `yaml:"attribution"`
+}
+
 type PostMeta struct {
-	Slug     string   `yaml:"slug"`
-	Title    string   `yaml:"title"`
-	Date     string   `yaml:"date"`
-	Tags     []string `yaml:"tags"`
-	Markdown string   `yaml:"markdown"`
+	Slug        string    `yaml:"slug"`
+	Title       string    `yaml:"title"`
+	Description string    `yaml:"description"`
+	Date        string    `yaml:"date"`
+	Tags        []string  `yaml:"tags"`
+	Markdown    string    `yaml:"markdown"`
+	HeroImage   HeroImage `yaml:"hero-image"`
 }
 
 type SiteData struct {
-	Title string
-	HTML  template.HTML
+	Title     string
+	HTML      template.HTML
+	Watch     bool
+	HeroImage HeroImage
+}
+
+type PostListData struct {
+	Posts []PostMeta
 	Watch bool
 }
 
@@ -49,8 +65,26 @@ type FileProgress struct {
 	Status   FileStatus
 }
 
-//go:embed templates/layout.html
-var layoutHTML string
+//go:embed templates/post.html
+var postTemplateHTML string
+
+//go:embed templates/postList.html
+var indexTemplateHTML string
+
+func generatePostList(posts []PostMeta, tmpl *template.Template, outputPath string, watchMode bool) {
+	f, err := os.Create(outputPath)
+	if err != nil {
+		log.Fatalf("failed to create output file: %v", err)
+		return
+	}
+	defer f.Close()
+
+	tmpl.Execute(f, tmpl.Execute(f, PostListData{
+		Posts: posts,
+		Watch: watchMode,
+	}))
+
+}
 
 func generatePage(post PostMeta, md goldmark.Markdown, tmpl *template.Template, outputPath string, watchMode bool) {
 	content, err := os.ReadFile(post.Markdown)
@@ -84,9 +118,10 @@ func generatePage(post PostMeta, md goldmark.Markdown, tmpl *template.Template, 
 
 	//fmt.Println("Generated html:", buf.String())
 	tmpl.Execute(f, SiteData{
-		Title: title,
-		HTML:  template.HTML(buf.String()),
-		Watch: watchMode,
+		Title:     title,
+		HeroImage: post.HeroImage,
+		HTML:      template.HTML(buf.String()),
+		Watch:     watchMode,
 	})
 	f.Close()
 }
@@ -101,12 +136,19 @@ func getPosts(postsPath string) []PostMeta {
 		log.Fatalf("failed to parse YAML: %v", err)
 	}
 
+	for i, post := range posts {
+		if post.Slug == "" {
+			posts[i].Slug = slugify(post.Title)
+		}
+	}
+
 	return posts
 }
 
 // This should not be Global. Depends on the command to be executed.
 var md goldmark.Markdown
-var tmpl *template.Template
+var postTemplate *template.Template
+var indexTemplate *template.Template
 
 func init() {
 	md = goldmark.New(
@@ -120,7 +162,8 @@ func init() {
 		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
 		goldmark.WithRendererOptions(html.WithHardWraps(), html.WithXHTML()),
 	)
-	tmpl = template.Must(template.New("layout").Parse(layoutHTML))
+	postTemplate = template.Must(template.New("layout").Parse(postTemplateHTML))
+	indexTemplate = template.Must(template.New("index").Parse(indexTemplateHTML))
 }
 
 func GenerateSite(postsPath, outputPath string, watchMode bool) []FileProgress {
@@ -132,7 +175,7 @@ func GenerateSite(postsPath, outputPath string, watchMode bool) []FileProgress {
 	os.MkdirAll(outputPath, 0755)
 
 	for _, post := range posts {
-		generatePage(post, md, tmpl, outputPath, watchMode)
+		generatePage(post, md, postTemplate, outputPath, watchMode)
 
 		filesProgress = append(filesProgress, FileProgress{
 			Filename: post.Markdown,
@@ -141,6 +184,15 @@ func GenerateSite(postsPath, outputPath string, watchMode bool) []FileProgress {
 
 	}
 
+	// Generate post list
+	indexPath := filepath.Join(outputPath, "index.html")
+	generatePostList(posts, indexTemplate, indexPath, watchMode)
+
+	filesProgress = append(filesProgress, FileProgress{
+		Filename: indexPath,
+		Status:   Completed,
+	})
+
 	return filesProgress
 }
 
@@ -148,11 +200,17 @@ func GenerateSiteAsync(postsPath, outputPath string, watchMode bool) (<-chan Fil
 	progressCh := make(chan FileProgress)
 
 	posts := getPosts(postsPath)
+	indexPath := filepath.Join(outputPath, "index.html")
 
 	//fmt.Println("POSTS:", posts)
-	initialProgress := make([]FileProgress, len(posts))
+	initialProgress := make([]FileProgress, len(posts)+1)
+
+	initialProgress[0] = FileProgress{
+		Filename: indexPath,
+		Status:   Pending,
+	}
 	for i, post := range posts {
-		initialProgress[i] = FileProgress{
+		initialProgress[i+1] = FileProgress{
 			Filename: post.Markdown,
 			Status:   Pending,
 		}
@@ -166,11 +224,17 @@ func GenerateSiteAsync(postsPath, outputPath string, watchMode bool) (<-chan Fil
 		for _, post := range posts {
 			progressCh <- FileProgress{Filename: post.Markdown, Status: Started}
 
-			generatePage(post, md, tmpl, outputPath, watchMode)
+			generatePage(post, md, postTemplate, outputPath, watchMode)
 
 			progressCh <- FileProgress{Filename: post.Markdown, Status: Completed}
 
 		}
+		progressCh <- FileProgress{Filename: indexPath, Status: Started}
+
+		generatePostList(posts, indexTemplate, indexPath, watchMode)
+
+		progressCh <- FileProgress{Filename: indexPath, Status: Completed}
+
 	}()
 
 	fmt.Println("returning progress channel")
