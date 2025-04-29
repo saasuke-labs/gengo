@@ -16,12 +16,7 @@
       }
     </style>
     <title>tsoobame</title>
-    {{ if .Watch }}
-    <script>
-      const es = new EventSource("/reload");
-      es.onmessage = () => location.reload();
-    </script>
-    {{ end }}
+    
   </head>
   <body>
     <div class="navbar navbar-expand-lg fixed-top bg-dark" data-bs-theme="dark">
@@ -32,46 +27,58 @@
 
     <div class="container mt-5 pt-3 my-5">
       <div class="row row-cols-1 row-cols-md-3 g-4">
-        {{range $post := .Posts}}
+        
         <div class="col">
           <div class="card">
             <img
-              src="https://res.cloudinary.com/ddkok43g3/image/upload/w_600,f_auto,q_auto/v1711551544/{{$post.HeroImage.Url}}"
+              src="https://res.cloudinary.com/ddkok43g3/image/upload/w_600,f_auto,q_auto/v1711551544/talk-think-code.jpg"
               class="card-img-top object-fit-cover"
-              alt="{{ $post.Title }}"
+              alt="Talk, think, code"
               style="height: 140px; object-fit: cover"
             />
 
             <div class="card-body">
               <small class="text-muted d-block mb-2">
                 <a
-                  href="{{ $post.HeroImage.Attribution.Url }}"
+                  href="https://unsplash.com/@pcbulai?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText"
                   target="_blank"
                   rel="noreferrer"
                   class="text-muted text-decoration-none"
                 >
-                  Photo by {{ $post.HeroImage.Attribution.Author }}
+                  Photo by Paul Bulai
                 </a>
               </small>
 
-              <h5 class="card-title mb-0">{{ $post.Title }}</h5>
-              <p class="text-muted mb-2">{{ $post.Date }}</p>
+              <h5 class="card-title mb-0">Talk, think, code</h5>
+              <p class="text-muted mb-2">2024-03-26</p>
 
-              <p class="card-text">{{ $post.Description }}</p>
+              <p class="card-text">Shifting focus in software development: from code-centric to the crucial interplay of conversation, contemplation, and coding</p>
 
               <div class="mb-3">
-                {{ range $tag := $post.Tags}}
+                
                 <a
-                  href="/tags/{{ $tag }}.html"
+                  href="/tags/software.html"
                   class="badge bg-light text-dark border me-1"
-                  >{{ $tag }}</a
+                  >software</a
                 >
-                {{ end }}
+                
+                <a
+                  href="/tags/tdd.html"
+                  class="badge bg-light text-dark border me-1"
+                  >tdd</a
+                >
+                
+                <a
+                  href="/tags/pair%20programming.html"
+                  class="badge bg-light text-dark border me-1"
+                  >pair programming</a
+                >
+                
               </div>
             </div>
           </div>
         </div>
-        {{end}}
+        
       </div>
     </div>
 

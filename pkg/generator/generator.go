@@ -169,6 +169,14 @@ func init() {
 func GenerateSite(postsPath, outputPath string, watchMode bool) []FileProgress {
 	posts := getPosts(postsPath)
 
+	tags := make(map[string][]PostMeta)
+	for _, post := range posts {
+		for _, tag := range post.Tags {
+			tags[tag] = append(tags[tag], post)
+		}
+	}
+	fmt.Println("TAGS:", tags)
+
 	//fmt.Println("POSTS:", posts)
 	filesProgress := []FileProgress{}
 
@@ -199,16 +207,27 @@ func GenerateSite(postsPath, outputPath string, watchMode bool) []FileProgress {
 func GenerateSiteAsync(postsPath, outputPath string, watchMode bool) (<-chan FileProgress, []FileProgress) {
 	progressCh := make(chan FileProgress)
 
+	tagsPath := filepath.Join(outputPath, "tags")
+
 	posts := getPosts(postsPath)
 	indexPath := filepath.Join(outputPath, "index.html")
 
+	tags := make(map[string][]PostMeta)
+	for _, post := range posts {
+		for _, tag := range post.Tags {
+			tags[tag] = append(tags[tag], post)
+		}
+	}
+	fmt.Println("TAGS:", tags)
+
 	//fmt.Println("POSTS:", posts)
-	initialProgress := make([]FileProgress, len(posts)+1)
+	initialProgress := make([]FileProgress, len(posts)+1+len(tags))
 
 	initialProgress[0] = FileProgress{
 		Filename: indexPath,
 		Status:   Pending,
 	}
+
 	for i, post := range posts {
 		initialProgress[i+1] = FileProgress{
 			Filename: post.Markdown,
@@ -216,7 +235,19 @@ func GenerateSiteAsync(postsPath, outputPath string, watchMode bool) (<-chan Fil
 		}
 	}
 
+	i := 0
+	for tag, posts := range tags {
+		tagPath := filepath.Join(tagsPath, tag+".html")
+		initialProgress[i+1+len(posts)] = FileProgress{
+			Filename: tagPath,
+			Status:   Pending,
+		}
+		i++
+	}
+
 	os.MkdirAll(outputPath, 0755)
+	os.MkdirAll(outputPath, 0755)
+	os.MkdirAll(tagsPath, 0755)
 
 	go func() {
 		defer close(progressCh)
@@ -234,6 +265,18 @@ func GenerateSiteAsync(postsPath, outputPath string, watchMode bool) (<-chan Fil
 		generatePostList(posts, indexTemplate, indexPath, watchMode)
 
 		progressCh <- FileProgress{Filename: indexPath, Status: Completed}
+
+		i := 0
+		for tag, posts := range tags {
+			tagPath := filepath.Join(tagsPath, tag+".html")
+			progressCh <- FileProgress{Filename: tagPath, Status: Started}
+
+			generatePostList(posts, indexTemplate, tagPath, watchMode)
+
+			progressCh <- FileProgress{Filename: tagPath, Status: Completed}
+
+			i++
+		}
 
 	}()
 

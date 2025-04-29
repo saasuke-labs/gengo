@@ -16,12 +16,7 @@
       }
     </style>
     <title>tsoobame</title>
-    {{ if .Watch }}
-    <script>
-      const es = new EventSource("/reload");
-      es.onmessage = () => location.reload();
-    </script>
-    {{ end }}
+    
   </head>
   <body>
     <div class="navbar navbar-expand-lg fixed-top bg-dark" data-bs-theme="dark">
@@ -32,46 +27,58 @@
 
     <div class="container mt-5 pt-3 my-5">
       <div class="row row-cols-1 row-cols-md-3 g-4">
-        {{range $post := .Posts}}
+        
         <div class="col">
           <div class="card">
             <img
-              src="https://res.cloudinary.com/ddkok43g3/image/upload/w_600,f_auto,q_auto/v1711551544/{{$post.HeroImage.Url}}"
+              src="https://res.cloudinary.com/ddkok43g3/image/upload/w_600,f_auto,q_auto/v1711551544/graphql-schema-stitching.jpg"
               class="card-img-top object-fit-cover"
-              alt="{{ $post.Title }}"
+              alt="Graphql Schema Stitching"
               style="height: 140px; object-fit: cover"
             />
 
             <div class="card-body">
               <small class="text-muted d-block mb-2">
                 <a
-                  href="{{ $post.HeroImage.Attribution.Url }}"
+                  href="https://unsplash.com/@anetakpawlik?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText"
                   target="_blank"
                   rel="noreferrer"
                   class="text-muted text-decoration-none"
                 >
-                  Photo by {{ $post.HeroImage.Attribution.Author }}
+                  Photo by Aneta Pawlik
                 </a>
               </small>
 
-              <h5 class="card-title mb-0">{{ $post.Title }}</h5>
-              <p class="text-muted mb-2">{{ $post.Date }}</p>
+              <h5 class="card-title mb-0">Graphql Schema Stitching</h5>
+              <p class="text-muted mb-2">2019-04-26</p>
 
-              <p class="card-text">{{ $post.Description }}</p>
+              <p class="card-text">What Graphql schema stitching is and how it can help us</p>
 
               <div class="mb-3">
-                {{ range $tag := $post.Tags}}
+                
                 <a
-                  href="/tags/{{ $tag }}.html"
+                  href="/tags/javascript.html"
                   class="badge bg-light text-dark border me-1"
-                  >{{ $tag }}</a
+                  >javascript</a
                 >
-                {{ end }}
+                
+                <a
+                  href="/tags/graphql.html"
+                  class="badge bg-light text-dark border me-1"
+                  >graphql</a
+                >
+                
+                <a
+                  href="/tags/api.html"
+                  class="badge bg-light text-dark border me-1"
+                  >api</a
+                >
+                
               </div>
             </div>
           </div>
         </div>
-        {{end}}
+        
       </div>
     </div>
 

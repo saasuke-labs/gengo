@@ -16,12 +16,7 @@
       }
     </style>
     <title>tsoobame</title>
-    {{ if .Watch }}
-    <script>
-      const es = new EventSource("/reload");
-      es.onmessage = () => location.reload();
-    </script>
-    {{ end }}
+    
   </head>
   <body>
     <div class="navbar navbar-expand-lg fixed-top bg-dark" data-bs-theme="dark">
@@ -32,46 +27,58 @@
 
     <div class="container mt-5 pt-3 my-5">
       <div class="row row-cols-1 row-cols-md-3 g-4">
-        {{range $post := .Posts}}
+        
         <div class="col">
           <div class="card">
             <img
-              src="https://res.cloudinary.com/ddkok43g3/image/upload/w_600,f_auto,q_auto/v1711551544/{{$post.HeroImage.Url}}"
+              src="https://res.cloudinary.com/ddkok43g3/image/upload/w_600,f_auto,q_auto/v1711551544/docker-registry-mirror.jpg"
               class="card-img-top object-fit-cover"
-              alt="{{ $post.Title }}"
+              alt="Local docker registry mirror"
               style="height: 140px; object-fit: cover"
             />
 
             <div class="card-body">
               <small class="text-muted d-block mb-2">
                 <a
-                  href="{{ $post.HeroImage.Attribution.Url }}"
+                  href="https://unsplash.com/@guibolduc"
                   target="_blank"
                   rel="noreferrer"
                   class="text-muted text-decoration-none"
                 >
-                  Photo by {{ $post.HeroImage.Attribution.Author }}
+                  Photo by Guillaume Bolduc
                 </a>
               </small>
 
-              <h5 class="card-title mb-0">{{ $post.Title }}</h5>
-              <p class="text-muted mb-2">{{ $post.Date }}</p>
+              <h5 class="card-title mb-0">Local docker registry mirror</h5>
+              <p class="text-muted mb-2">2022-09-05</p>
 
-              <p class="card-text">{{ $post.Description }}</p>
+              <p class="card-text">Why I configured a docker registry in my local machine to improve my development process</p>
 
               <div class="mb-3">
-                {{ range $tag := $post.Tags}}
+                
                 <a
-                  href="/tags/{{ $tag }}.html"
+                  href="/tags/docker.html"
                   class="badge bg-light text-dark border me-1"
-                  >{{ $tag }}</a
+                  >docker</a
                 >
-                {{ end }}
+                
+                <a
+                  href="/tags/development.html"
+                  class="badge bg-light text-dark border me-1"
+                  >development</a
+                >
+                
+                <a
+                  href="/tags/tools.html"
+                  class="badge bg-light text-dark border me-1"
+                  >tools</a
+                >
+                
               </div>
             </div>
           </div>
         </div>
-        {{end}}
+        
       </div>
     </div>
 
