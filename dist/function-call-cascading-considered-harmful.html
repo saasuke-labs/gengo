@@ -2,8 +2,10 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/litera/bootstrap.min.css" rel="stylesheet" />
-
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/litera/bootstrap.min.css"
+      rel="stylesheet"
+    />
 
     <style>
       pre {
@@ -23,20 +25,47 @@
       </div>
     </div>
 
-    <div class="container mt-5 pt-3">
-      <div class="row">
-        <div class="text-end mb-4">
-          <img src="https://res.cloudinary.com/ddkok43g3/image/upload/w_auto,h_400,c_fill,g_auto,q_auto,f_auto/v1711551544/function-call-cascading.jpg" 
-          style="width: 100%; height: 400px; object-fit: cover;"
-          
-          alt="Function call cascading considered harmful" />
-        <small class="text-muted d-block mt-2">
-          Photo by <a href="https://unsplash.com/@sarahdoffman?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText" class="text-decoration-none" target="_blank" rel="noopener noreferrer">Sarah Doffman</a>
-        </small>
-        </div>
-        <div class="row">
-
-      <article><h1 id="function-call-cascading-considered-harmful">Function call cascading considered harmful</h1>
+    <div class="container mt-5 pt-3"><div class="row">
+  <div class="text-end mb-4">
+    <img
+      src="https://res.cloudinary.com/ddkok43g3/image/upload/w_auto,h_400,c_fill,g_auto,q_auto,f_auto/v1711551544/function-call-cascading.jpg"
+      style="width: 100%; height: 400px; object-fit: cover"
+      alt="Function call cascading considered harmful"
+    />
+    <div>
+      
+      <a
+        href="/tags/software.html"
+        class="badge bg-light text-dark border me-1"
+        >software</a
+      >
+      
+      <a
+        href="/tags/anti-patterns.html"
+        class="badge bg-light text-dark border me-1"
+        >anti-patterns</a
+      >
+      
+      <a
+        href="/tags/composition.html"
+        class="badge bg-light text-dark border me-1"
+        >composition</a
+      >
+      
+      <small class="text-muted mt-2">
+        Photo by
+        <a
+          href="https://unsplash.com/@sarahdoffman?utm_source=unsplash&amp;utm_medium=referral&amp;utm_content=creditCopyText"
+          class="text-decoration-none"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Sarah Doffman</a
+        >
+      </small>
+    </div>
+  </div>
+  <div class="row">
+    <article><h1 id="function-call-cascading-considered-harmful">Function call cascading considered harmful</h1>
 <h2 id="introduction">Introduction</h2>
 <p>Improving the reusability and composability of software components is a common goal we all strive for. However, more often than not, we find ourselves falling short without a clear understanding of why. Sometimes, we favor one approach over another without a solid rationale, labeling the differences as mere programming styles.</p>
 <p>In my case, I have a preference for writing code that reads like recipes. I strive to develop functions or components as if they will be utilized by multiple clients, even if that's not the current scenario. This personal style offers benefits such as reusability and testability, but I have also realized that it tends to veer toward overengineering, so it's important to keep that in check.</p>
@@ -268,19 +297,23 @@ For example when we use <a href="https://refactoring.guru/design-patterns/chain-
 in middlewares, each middleware will call the next. But each of them are unaware of what middleware is next since<br />
 that decision is taken in another component, and therefore the middlewares can be plugged together in any way.</p>
 </article>
-      </div>
-    </div>
+  </div>
+</div>
+</div>
 
     <footer class="bg-light py-4 mt-5 border-top">
       <div class="container text-center">
         <p class="mb-1">&copy; 2025 tsoobame. All rights reserved.</p>
         <p class="mb-0">
-          <a href="https://www.linkedin.com/in/tonitienda" target="_blank" class="text-decoration-none">
+          <a
+            href="https://www.linkedin.com/in/tonitienda"
+            target="_blank"
+            class="text-decoration-none"
+          >
             <i class="bi bi-linkedin me-1"></i>Connect on LinkedIn
           </a>
         </p>
       </div>
     </footer>
-    
   </body>
 </html>

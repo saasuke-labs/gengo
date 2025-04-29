@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/litera/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      pre {
+        border: 2px solid #ddd;
+        border-radius: 12px;
+        box-shadow: #eee 0px 0px 10px;
+        padding: 18px;
+      }
+    </style>
+    <title>{{ .Title }}</title>
+    {{ if .Watch }}
+    <script>
+      const es = new EventSource("/reload");
+      es.onmessage = () => location.reload();
+    </script>
+    {{ end }}
+  </head>
+  <body>
+    <div class="navbar navbar-expand-lg fixed-top bg-dark" data-bs-theme="dark">
+      <div class="container">
+        <a href="/" class="navbar-brand">tsoobame</a>
+      </div>
+    </div>
+
+    <div class="container mt-5 pt-3">{{ .HTML }}</div>
+
+    <footer class="bg-light py-4 mt-5 border-top">
+      <div class="container text-center">
+        <p class="mb-1">&copy; 2025 tsoobame. All rights reserved.</p>
+        <p class="mb-0">
+          <a
+            href="https://www.linkedin.com/in/tonitienda"
+            target="_blank"
+            class="text-decoration-none"
+          >
+            <i class="bi bi-linkedin me-1"></i>Connect on LinkedIn
+          </a>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
