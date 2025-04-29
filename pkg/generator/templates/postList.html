@@ -61,26 +61,14 @@
               <p class="card-text">{{ $post.Description }}</p>
 
               <div class="mb-3">
+                {{ range $tag := $post.Tags}}
                 <a
-                  href="/blog/tags/software.html"
+                  href="/blog/tags/{{ $tag }}.html"
                   class="badge bg-light text-dark border me-1"
-                  >software</a
+                  >{{ $tag }}</a
                 >
-                <a
-                  href="/blog/tags/tdd.html"
-                  class="badge bg-light text-dark border me-1"
-                  >tdd</a
-                >
-                <a
-                  href="/blog/tags/pair programming.html"
-                  class="badge bg-light text-dark border"
-                  >pair programming</a
-                >
+                {{ end }}
               </div>
-
-              <a href="{{ $post.Slug }}.html" class="btn btn-sm btn-primary"
-                >Learn More</a
-              >
             </div>
           </div>
         </div>

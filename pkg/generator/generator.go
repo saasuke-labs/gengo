@@ -79,10 +79,10 @@ func generatePostList(posts []PostMeta, tmpl *template.Template, outputPath stri
 	}
 	defer f.Close()
 
-	tmpl.Execute(f, tmpl.Execute(f, PostListData{
+	tmpl.Execute(f, PostListData{
 		Posts: posts,
 		Watch: watchMode,
-	}))
+	})
 
 }
 
@@ -162,7 +162,7 @@ func init() {
 		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
 		goldmark.WithRendererOptions(html.WithHardWraps(), html.WithXHTML()),
 	)
-	postTemplate = template.Must(template.New("layout").Parse(postTemplateHTML))
+	postTemplate = template.Must(template.New("post").Parse(postTemplateHTML))
 	indexTemplate = template.Must(template.New("index").Parse(indexTemplateHTML))
 }
 
