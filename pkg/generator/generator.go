@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"gopkg.in/yaml.v3"
 )
@@ -195,6 +196,7 @@ func GenerateSite(postsPath, outputPath string, watchMode bool) []FileProgress {
 }
 
 func GenerateSiteAsync(postsPath, outputPath string, watchMode bool) (<-chan FileProgress, []FileProgress) {
+
 	progressCh := make(chan FileProgress)
 
 	tagsPath := filepath.Join(outputPath, "tags")
@@ -240,14 +242,19 @@ func GenerateSiteAsync(postsPath, outputPath string, watchMode bool) (<-chan Fil
 	os.MkdirAll(tagsPath, 0755)
 
 	go func() {
-		defer close(progressCh)
+		var wg sync.WaitGroup
 
 		for _, post := range posts {
-			progressCh <- FileProgress{Filename: post.Markdown, Status: Started}
+			go func(p PostMeta) {
+				wg.Add(1)
+				defer wg.Done()
 
-			generatePostPage(post, postTemplate, outputPath, watchMode)
+				progressCh <- FileProgress{Filename: p.Markdown, Status: Started}
 
-			progressCh <- FileProgress{Filename: post.Markdown, Status: Completed}
+				generatePostPage(p, postTemplate, outputPath, watchMode)
+
+				progressCh <- FileProgress{Filename: p.Markdown, Status: Completed}
+			}(post)
 
 		}
 		progressCh <- FileProgress{Filename: indexPath, Status: Started}
@@ -256,18 +263,23 @@ func GenerateSiteAsync(postsPath, outputPath string, watchMode bool) (<-chan Fil
 
 		progressCh <- FileProgress{Filename: indexPath, Status: Completed}
 
-		i := 0
 		for tag, posts := range tags {
-			tagPath := filepath.Join(tagsPath, tag+".html")
-			progressCh <- FileProgress{Filename: tagPath, Status: Started}
+			go func(tag string, posts []PostMeta) {
+				wg.Add(1)
+				defer wg.Done()
 
-			generatePostList(posts, postListTemplate, tagPath, watchMode)
+				tagPath := filepath.Join(tagsPath, tag+".html")
+				progressCh <- FileProgress{Filename: tagPath, Status: Started}
 
-			progressCh <- FileProgress{Filename: tagPath, Status: Completed}
+				generatePostList(posts, postListTemplate, tagPath, watchMode)
 
-			i++
+				progressCh <- FileProgress{Filename: tagPath, Status: Completed}
+			}(tag, posts)
+
 		}
 
+		wg.Wait()
+		close(progressCh)
 	}()
 
 	fmt.Println("returning progress channel")
