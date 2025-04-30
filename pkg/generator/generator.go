@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"blog-down/pkg/parser"
 	"bytes"
 	_ "embed"
 	"fmt"
@@ -10,13 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/yuin/goldmark"
-	highlighting "github.com/yuin/goldmark-highlighting"
-	"github.com/yuin/goldmark/ast"
-	"github.com/yuin/goldmark/extension"
-	"github.com/yuin/goldmark/parser"
-	"github.com/yuin/goldmark/renderer/html"
-	"github.com/yuin/goldmark/text"
 	"gopkg.in/yaml.v3"
 )
 
@@ -81,26 +75,14 @@ var postListTemplateHTML string
 var layoutTemplateHTML string
 
 // This should not be Global. Depends on the command to be executed.
-var md goldmark.Markdown
 var postTemplate *template.Template
-var layourTemplate *template.Template
+var layoutTemplate *template.Template
 var postListTemplate *template.Template
 
 func init() {
-	md = goldmark.New(
-		goldmark.WithExtensions(extension.GFM, highlighting.NewHighlighting(
-			// highlighting.WithFormatOptions(
-			// 	htmlchroma.WithLineNumbers(true),
-			// ),
-			highlighting.WithStyle("github"), // choose a theme
-			highlighting.WithGuessLanguage(false),
-		)),
-		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
-		goldmark.WithRendererOptions(html.WithHardWraps(), html.WithXHTML()),
-	)
 	postTemplate = template.Must(template.New("post").Parse(postTemplateHTML))
 	postListTemplate = template.Must(template.New("postList").Parse(postListTemplateHTML))
-	layourTemplate = template.Must(template.New("layour").Parse(layoutTemplateHTML))
+	layoutTemplate = template.Must(template.New("layout").Parse(layoutTemplateHTML))
 }
 
 func generatePage(title string, content template.HTML, tmpl *template.Template, outputPath string, watchMode bool) {
@@ -111,7 +93,7 @@ func generatePage(title string, content template.HTML, tmpl *template.Template, 
 	}
 	defer f.Close()
 
-	layourTemplate.Execute(f, PageData{
+	layoutTemplate.Execute(f, PageData{
 		Title: title,
 		HTML:  content,
 		Watch: watchMode,
@@ -129,29 +111,18 @@ func generatePostList(posts []PostMeta, tmpl *template.Template, outputPath stri
 	generatePage("Posts", template.HTML(html.String()), tmpl, outputPath, watchMode)
 }
 
-func generatePostPage(post PostMeta, md goldmark.Markdown, tmpl *template.Template, outputPath string, watchMode bool) {
+func generatePostPage(post PostMeta, tmpl *template.Template, outputPath string, watchMode bool) {
 
-	content, err := os.ReadFile(post.Markdown)
-	if err != nil {
-		log.Fatalf("failed to read %s: %v", post.Markdown, err)
-		return
-	}
-	context := parser.NewContext()
-	doc := md.Parser().Parse(text.NewReader(content), parser.WithContext(context))
-	//printAST(doc, content)
+	htmlPage := parser.MarkdownToHtml(post.Markdown)
 
 	title := post.Title
 	if title == "" {
-		if h1 := findFirstH1(doc, content); h1 != "" {
-			title = h1
-		}
+		title = htmlPage.Title
 	}
+
 	if post.Slug == "" {
 		post.Slug = slugify(title)
 	}
-	var article bytes.Buffer
-
-	md.Renderer().Render(&article, content, doc)
 
 	outFile := filepath.Join(outputPath, post.Slug+".html")
 
@@ -160,7 +131,7 @@ func generatePostPage(post PostMeta, md goldmark.Markdown, tmpl *template.Templa
 		Title:     title,
 		HeroImage: post.HeroImage,
 		Tags:      post.Tags,
-		Article:   template.HTML(article.String()),
+		Article:   htmlPage.HTML,
 	})
 
 	generatePage(title, template.HTML(html.String()), tmpl, outFile, watchMode)
@@ -202,7 +173,7 @@ func GenerateSite(postsPath, outputPath string, watchMode bool) []FileProgress {
 	os.MkdirAll(outputPath, 0755)
 
 	for _, post := range posts {
-		generatePostPage(post, md, postTemplate, outputPath, watchMode)
+		generatePostPage(post, postTemplate, outputPath, watchMode)
 
 		filesProgress = append(filesProgress, FileProgress{
 			Filename: post.Markdown,
@@ -274,7 +245,7 @@ func GenerateSiteAsync(postsPath, outputPath string, watchMode bool) (<-chan Fil
 		for _, post := range posts {
 			progressCh <- FileProgress{Filename: post.Markdown, Status: Started}
 
-			generatePostPage(post, md, postTemplate, outputPath, watchMode)
+			generatePostPage(post, postTemplate, outputPath, watchMode)
 
 			progressCh <- FileProgress{Filename: post.Markdown, Status: Completed}
 
@@ -322,15 +293,6 @@ func GenerateSiteAsync(postsPath, outputPath string, watchMode bool) (<-chan Fil
 // 		printAST(n, source)
 // 	}
 // }
-
-func findFirstH1(doc ast.Node, source []byte) string {
-	for n := doc.FirstChild(); n != nil; n = n.NextSibling() {
-		if h, ok := n.(*ast.Heading); ok && h.Level == 1 {
-			return string(h.Text(source))
-		}
-	}
-	return ""
-}
 
 func slugify(s string) string {
 	s = strings.ToLower(s)
