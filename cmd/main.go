@@ -11,11 +11,7 @@ import (
 	_ "github.com/yuin/goldmark/extension"
 )
 
-// var (
-// 	sseClients    = make(map[chan string]bool)
-// 	sseRegister   = make(chan chan string)
-// 	sseUnregister = make(chan chan string)
-// )
+var rootCmd cobra.Command
 
 func execGenerateSite(postsPath, outputPath string, watchMode bool) {
 	ch, filesProgress := generator.GenerateSiteAsync(postsPath, outputPath, watchMode)
@@ -57,35 +53,39 @@ func execGenerateSite(postsPath, outputPath string, watchMode bool) {
 
 }
 
-func executeCLI() {
+func init() {
+
+	rootCmd = cobra.Command{
+		Use:   "rego",
+		Short: "Static site generator from Markdown",
+		Run: func(cmd *cobra.Command, args []string) {
+
+		},
+	}
 
 	var postsPath string
 	var outputPath string
 	var watchMode bool
 
-	var rootCmd = &cobra.Command{
-		Use:   "mdsite",
-		Short: "Static site generator from Markdown",
+	var generateCmd = &cobra.Command{
+		Use:   "generate",
+		Short: "Generate the static site",
+		Long:  `Generate the static site from the manifest.yaml file and output it to the specified directory.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			// This function will be executed when the "subcommand" is called
 			execGenerateSite(postsPath, outputPath, watchMode)
-			// if watchMode {
-			// 	go startSSEServer()
-			// 	go serveOutput(outputPath)
-			// 	watchAndRebuild(postsPath, outputPath)
-			// 	select {}
-			// }
 		},
 	}
 
-	rootCmd.Flags().StringVar(&postsPath, "posts", "posts.yaml", "Path to posts.yaml")
-	rootCmd.Flags().StringVar(&outputPath, "output", "output", "Output directory")
-	rootCmd.Flags().BoolVar(&watchMode, "watch", false, "Enable watch mode with hot reload")
-	rootCmd.Execute()
+	generateCmd.Flags().StringVar(&postsPath, "posts", "posts.yaml", "Path to posts.yaml")
+	generateCmd.Flags().StringVar(&outputPath, "output", "output", "Output directory")
+	generateCmd.Flags().BoolVar(&watchMode, "watch", false, "Enable watch mode with hot reload")
 
+	rootCmd.AddCommand(generateCmd)
 }
 
 func main() {
-	executeCLI()
+	rootCmd.Execute()
 
 	// files := []string{"file1.md", "file2.md", "file3.md"}
 	// statuses := []cli.FileStatus{cli.Started, cli.Completed}
