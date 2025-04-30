@@ -3,6 +3,7 @@ package main
 import (
 	"blog-down/pkg/cli"
 	"blog-down/pkg/generator"
+	"blog-down/pkg/server"
 	_ "embed"
 	"fmt"
 	"time"
@@ -53,6 +54,10 @@ func execGenerateSite(postsPath, outputPath string, watchMode bool) {
 
 }
 
+func execServeSite(sitePath string, watchMode bool) {
+	server.Serve(sitePath, watchMode)
+}
+
 func init() {
 
 	rootCmd = cobra.Command{
@@ -64,6 +69,7 @@ func init() {
 	}
 
 	var postsPath string
+	var sitePath string
 	var outputPath string
 	var watchMode bool
 
@@ -81,7 +87,21 @@ func init() {
 	generateCmd.Flags().StringVar(&outputPath, "output", "output", "Output directory")
 	generateCmd.Flags().BoolVar(&watchMode, "watch", false, "Enable watch mode with hot reload")
 
+	var serveCmd = &cobra.Command{
+		Use:   "serve",
+		Short: "Serves the static site",
+		Long:  `Serves the static site.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			// This function will be executed when the "subcommand" is called
+			execServeSite(sitePath, watchMode)
+		},
+	}
+
+	serveCmd.Flags().StringVar(&sitePath, "site", "site", "Site directory")
+	serveCmd.Flags().BoolVar(&watchMode, "watch", false, "Enable watch mode with hot reload")
+
 	rootCmd.AddCommand(generateCmd)
+	rootCmd.AddCommand(serveCmd)
 }
 
 func main() {
