@@ -16,8 +16,8 @@ import (
 
 var rootCmd cobra.Command
 
-func execGenerateSite(postsPath, outputPath string, watchMode bool) {
-	ch, filesProgress := generator.GenerateSiteAsync(postsPath, outputPath, watchMode)
+func execGenerateSite(postsPath, outputPath string) {
+	ch, filesProgress := generator.GenerateSiteAsync(postsPath, outputPath)
 
 	files := []string{}
 	filesStatuses := map[string]generator.FileStatus{}
@@ -80,14 +80,13 @@ func init() {
 		Short: "Generate the static site",
 		Long:  `Generate the static site from the manifest.yaml file and output it to the specified directory.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			// This function will be executed when the "subcommand" is called
-			//execGenerateSite(postsPath, outputPath, watchMode)
+			execGenerateSite(postsPath, outputPath)
 
 			// TODO - See how to find this directory from posts.yaml
 			go watcher.WatchDir("./blog/posts", func(file string) {
 				// TODO - Optimize and generate only the changed file
 				fmt.Println(("Generating site..."))
-				execGenerateSite(postsPath, outputPath, watchMode)
+				execGenerateSite(postsPath, outputPath)
 
 			})
 

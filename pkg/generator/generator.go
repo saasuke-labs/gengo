@@ -36,7 +36,6 @@ type PostMeta struct {
 type PageData struct {
 	Title string
 	HTML  template.HTML
-	Watch bool
 }
 
 type PostPageData struct {
@@ -48,7 +47,6 @@ type PostPageData struct {
 
 type PostListData struct {
 	Posts []PostMeta
-	Watch bool
 }
 
 type FileStatus string
@@ -86,7 +84,7 @@ func init() {
 	layoutTemplate = template.Must(template.New("layout").Parse(layoutTemplateHTML))
 }
 
-func generatePage(title string, content template.HTML, tmpl *template.Template, outputPath string, watchMode bool) {
+func generatePage(title string, content template.HTML, tmpl *template.Template, outputPath string) {
 	f, err := os.Create(outputPath)
 	if err != nil {
 		log.Fatalf("failed to create output file: %v", err)
@@ -97,22 +95,20 @@ func generatePage(title string, content template.HTML, tmpl *template.Template, 
 	layoutTemplate.Execute(f, PageData{
 		Title: title,
 		HTML:  content,
-		Watch: watchMode,
 	})
 }
 
-func generatePostList(posts []PostMeta, tmpl *template.Template, outputPath string, watchMode bool) {
+func generatePostList(posts []PostMeta, tmpl *template.Template, outputPath string) {
 	html := bytes.NewBufferString("")
 
 	tmpl.Execute(html, PostListData{
 		Posts: posts,
-		Watch: watchMode,
 	})
 
-	generatePage("Posts", template.HTML(html.String()), tmpl, outputPath, watchMode)
+	generatePage("Posts", template.HTML(html.String()), tmpl, outputPath)
 }
 
-func generatePostPage(post PostMeta, tmpl *template.Template, outputPath string, watchMode bool) {
+func generatePostPage(post PostMeta, tmpl *template.Template, outputPath string) {
 
 	htmlPage := parser.MarkdownToHtml(post.Markdown)
 
@@ -135,7 +131,7 @@ func generatePostPage(post PostMeta, tmpl *template.Template, outputPath string,
 		Article:   htmlPage.HTML,
 	})
 
-	generatePage(title, template.HTML(html.String()), tmpl, outFile, watchMode)
+	generatePage(title, template.HTML(html.String()), tmpl, outFile)
 }
 
 func getPosts(postsPath string) []PostMeta {
@@ -157,7 +153,7 @@ func getPosts(postsPath string) []PostMeta {
 	return posts
 }
 
-func GenerateSite(postsPath, outputPath string, watchMode bool) []FileProgress {
+func GenerateSite(postsPath, outputPath string) []FileProgress {
 	posts := getPosts(postsPath)
 
 	tags := make(map[string][]PostMeta)
@@ -174,7 +170,7 @@ func GenerateSite(postsPath, outputPath string, watchMode bool) []FileProgress {
 	os.MkdirAll(outputPath, 0755)
 
 	for _, post := range posts {
-		generatePostPage(post, postTemplate, outputPath, watchMode)
+		generatePostPage(post, postTemplate, outputPath)
 
 		filesProgress = append(filesProgress, FileProgress{
 			Filename: post.Markdown,
@@ -185,7 +181,7 @@ func GenerateSite(postsPath, outputPath string, watchMode bool) []FileProgress {
 
 	// Generate post list
 	indexPath := filepath.Join(outputPath, "index.html")
-	generatePostList(posts, postListTemplate, indexPath, watchMode)
+	generatePostList(posts, postListTemplate, indexPath)
 
 	filesProgress = append(filesProgress, FileProgress{
 		Filename: indexPath,
@@ -195,7 +191,7 @@ func GenerateSite(postsPath, outputPath string, watchMode bool) []FileProgress {
 	return filesProgress
 }
 
-func GenerateSiteAsync(postsPath, outputPath string, watchMode bool) (<-chan FileProgress, []FileProgress) {
+func GenerateSiteAsync(postsPath, outputPath string) (<-chan FileProgress, []FileProgress) {
 
 	progressCh := make(chan FileProgress)
 
@@ -251,7 +247,7 @@ func GenerateSiteAsync(postsPath, outputPath string, watchMode bool) (<-chan Fil
 
 				progressCh <- FileProgress{Filename: p.Markdown, Status: Started}
 
-				generatePostPage(p, postTemplate, outputPath, watchMode)
+				generatePostPage(p, postTemplate, outputPath)
 
 				progressCh <- FileProgress{Filename: p.Markdown, Status: Completed}
 			}(post)
@@ -259,7 +255,7 @@ func GenerateSiteAsync(postsPath, outputPath string, watchMode bool) (<-chan Fil
 		}
 		progressCh <- FileProgress{Filename: indexPath, Status: Started}
 
-		generatePostList(posts, postListTemplate, indexPath, watchMode)
+		generatePostList(posts, postListTemplate, indexPath)
 
 		progressCh <- FileProgress{Filename: indexPath, Status: Completed}
 
@@ -271,7 +267,7 @@ func GenerateSiteAsync(postsPath, outputPath string, watchMode bool) (<-chan Fil
 				tagPath := filepath.Join(tagsPath, tag+".html")
 				progressCh <- FileProgress{Filename: tagPath, Status: Started}
 
-				generatePostList(posts, postListTemplate, tagPath, watchMode)
+				generatePostList(posts, postListTemplate, tagPath)
 
 				progressCh <- FileProgress{Filename: tagPath, Status: Completed}
 			}(tag, posts)
@@ -285,26 +281,6 @@ func GenerateSiteAsync(postsPath, outputPath string, watchMode bool) (<-chan Fil
 	fmt.Println("returning progress channel")
 	return progressCh, initialProgress
 }
-
-// func printAST(node ast.Node, source []byte) {
-// 	for n := node.FirstChild(); n != nil; n = n.NextSibling() {
-// 		switch n := n.(type) {
-// 		case *ast.Heading:
-// 			fmt.Printf("\nHeading: %d %s\n", n.Level, n.Text(source))
-// 		case *ast.FencedCodeBlock:
-// 			fmt.Printf("\nCode Block: %s \n%s\n\n", (*ast.FencedCodeBlock)(n).Language(source), n.Lines().Value(source))
-// 		case *ast.Paragraph:
-// 			fmt.Printf("\nParagraph: %s \n", (*ast.Paragraph)(n).Lines().Value(source))
-// 		case *ast.Text:
-// 			fmt.Printf("\nText: %s \n", (*ast.Text)(n).Value(source))
-// 		case *ast.HTMLBlock:
-// 			fmt.Printf("\nHTML Block: %s\n", n.Text(source))
-// 		default:
-// 			fmt.Printf("\nNode: %T\n", n)
-// 		}
-// 		printAST(n, source)
-// 	}
-// }
 
 func slugify(s string) string {
 	s = strings.ToLower(s)
