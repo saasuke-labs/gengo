@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/gorilla/websocket"
 )
 
@@ -77,36 +76,6 @@ func notifyClients(filePath string) {
 			log.Println("WebSocket write error:", err)
 			conn.Close()
 			delete(clients, conn)
-		}
-	}
-}
-
-func watchFiles(sitePath string) {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer watcher.Close()
-
-	err = filepath.Walk(sitePath, func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			return watcher.Add(path)
-		}
-		return nil
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for {
-		select {
-		case event := <-watcher.Events:
-			if strings.HasSuffix(event.Name, ".html") {
-				log.Println("File changed:", event.Name)
-				notifyClients()
-			}
-		case err := <-watcher.Errors:
-			log.Println("Watcher error:", err)
 		}
 	}
 }
