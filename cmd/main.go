@@ -4,8 +4,10 @@ import (
 	"blog-down/pkg/cli"
 	"blog-down/pkg/generator"
 	"blog-down/pkg/server"
+	"blog-down/pkg/watcher"
 	_ "embed"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -54,8 +56,8 @@ func execGenerateSite(postsPath, outputPath string, watchMode bool) {
 
 }
 
-func execServeSite(sitePath string, watchMode bool) {
-	server.Serve(sitePath, watchMode)
+func execServeSite(sitePath string, watchMode bool, port int) {
+	server.Serve(sitePath, watchMode, port)
 }
 
 func init() {
@@ -79,7 +81,19 @@ func init() {
 		Long:  `Generate the static site from the manifest.yaml file and output it to the specified directory.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			// This function will be executed when the "subcommand" is called
-			execGenerateSite(postsPath, outputPath, watchMode)
+			//execGenerateSite(postsPath, outputPath, watchMode)
+
+			// TODO - See how to find this directory from posts.yaml
+			go watcher.WatchDir("./blog/posts", func(file string) {
+				// TODO - Optimize and generate only the changed file
+				fmt.Println(("Generating site..."))
+				execGenerateSite(postsPath, outputPath, watchMode)
+
+			})
+
+			fmt.Println("Press any key to exit...")
+			var b []byte = make([]byte, 1)
+			os.Stdin.Read(b)
 		},
 	}
 
@@ -93,7 +107,8 @@ func init() {
 		Long:  `Serves the static site.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			// This function will be executed when the "subcommand" is called
-			execServeSite(sitePath, watchMode)
+			//TODO -  Get port from flags
+			execServeSite(sitePath, watchMode, 3000)
 		},
 	}
 
