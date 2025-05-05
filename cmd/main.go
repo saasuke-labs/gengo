@@ -1,7 +1,6 @@
 package main
 
 import (
-	"blog-down/pkg/cli"
 	"blog-down/pkg/generator"
 	"blog-down/pkg/server"
 	"blog-down/pkg/watcher"
@@ -16,19 +15,22 @@ import (
 
 var rootCmd cobra.Command
 
-func execGenerateSite(postsPath, outputPath string) {
-	ch, filesProgress := generator.GenerateSiteAsync(postsPath, outputPath)
+func execGenerateSite(manifestPath, outputPath string) {
+	ch := generator.GenerateSiteAsync(manifestPath, outputPath)
 
-	files := []string{}
-	filesStatuses := map[string]generator.FileStatus{}
-	completed := 0
+	// files := []string{}
+	// filesStatuses := map[string]generator.FileStatus{}
+	// completed := 0
 
-	for _, fileProgress := range filesProgress {
-		files = append(files, fileProgress.Filename)
-		filesStatuses[fileProgress.Filename] = fileProgress.Status
-	}
+	// sectionIndex := map[string]int{}
+	// fileIndex := map[string]int{}
 
-	cli.UpdateScreen("Files progress:", files, filesStatuses, completed, len(files))
+	// for _, fileProgress := range filesProgress {
+	// 	files = append(files, fileProgress.Filename)
+	// 	filesStatuses[fileProgress.Filename] = fileProgress.Status
+	// }
+
+	// cli.UpdateScreen("Files progress:", files, filesStatuses, completed, len(files))
 
 	fmt.Println("Waiting for updates...")
 	for {
@@ -36,17 +38,16 @@ func execGenerateSite(postsPath, outputPath string) {
 		case progress, ok := <-ch:
 			if !ok {
 				// Channel closed, processing complete
-				fmt.Println("Channel closed")
+				//fmt.Println("Channel closed")
 				return
 			}
-
 			fmt.Println("Received update:", progress.Filename, progress.Status)
 			// Update our state
-			filesStatuses[progress.Filename] = progress.Status
-			if progress.Status == generator.Completed || progress.Status == generator.Failed {
-				completed++
-			}
-			cli.UpdateScreen("Files progress:", files, filesStatuses, completed, len(files))
+			//filesStatuses[progress.Filename] = progress.Status
+			// if progress.Status == generator.Completed || progress.Status == generator.Failed {
+			// 	completed++
+			// }
+			//cli.UpdateScreen("Files progress:", files, filesStatuses, completed, len(files))
 
 		default:
 			// No updates available, wait a bit before refreshing
@@ -63,14 +64,14 @@ func execServeSite(sitePath string, watchMode bool, port int) {
 func init() {
 
 	rootCmd = cobra.Command{
-		Use:   "rego",
+		Use:   "gengo",
 		Short: "Static site generator from Markdown",
 		Run: func(cmd *cobra.Command, args []string) {
 
 		},
 	}
 
-	var postsPath string
+	var manifestPath string
 	var sitePath string
 	var outputPath string
 	var watchMode bool
@@ -80,23 +81,25 @@ func init() {
 		Short: "Generate the static site",
 		Long:  `Generate the static site from the manifest.yaml file and output it to the specified directory.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			execGenerateSite(postsPath, outputPath)
+			execGenerateSite(manifestPath, outputPath)
 
-			// TODO - See how to find this directory from posts.yaml
-			go watcher.WatchDir("./blog/posts", func(file string) {
-				// TODO - Optimize and generate only the changed file
-				fmt.Println(("Generating site..."))
-				execGenerateSite(postsPath, outputPath)
+			if watchMode {
+				// TODO - See how to find this directory from posts.yaml
+				go watcher.WatchDir("./blog/posts", func(file string) {
+					// TODO - Optimize and generate only the changed file
+					fmt.Println(("Generating site..."))
+					execGenerateSite(manifestPath, outputPath)
 
-			})
+				})
 
-			fmt.Println("Press any key to exit...")
-			var b []byte = make([]byte, 1)
-			os.Stdin.Read(b)
+				fmt.Println("Press any key to exit...")
+				var b []byte = make([]byte, 1)
+				os.Stdin.Read(b)
+			}
 		},
 	}
 
-	generateCmd.Flags().StringVar(&postsPath, "posts", "posts.yaml", "Path to posts.yaml")
+	generateCmd.Flags().StringVar(&manifestPath, "manifest", "gengo.yaml", "Path to the manifest file")
 	generateCmd.Flags().StringVar(&outputPath, "output", "output", "Output directory")
 	generateCmd.Flags().BoolVar(&watchMode, "watch", false, "Enable watch mode with hot reload")
 
@@ -152,11 +155,11 @@ func main() {
 
 }
 
-// func watchAndRebuild(postsPath, outputPath string) {
+// func watchAndRebuild(manifestPath, outputPath string) {
 // 	w, _ := fsnotify.NewWatcher()
 // 	defer w.Close()
-// 	//contentDir := filepath.Dir(postsPath)
-// 	w.Add(postsPath)
+// 	//contentDir := filepath.Dir(manifestPath)
+// 	w.Add(manifestPath)
 // 	w.Add("templates")
 // 	filepath.WalkDir("content", func(path string, d fs.DirEntry, err error) error {
 // 		if !d.IsDir() && strings.HasSuffix(path, ".md") {
@@ -167,7 +170,7 @@ func main() {
 // 	for {
 // 		select {
 // 		case <-w.Events:
-// 			generator.GenerateSite(postsPath, outputPath, true)
+// 			generator.GenerateSite(manifestPath, outputPath, true)
 // 			broadcastReload()
 // 		case err := <-w.Errors:
 // 			log.Println("watch error:", err)

@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -51,6 +52,40 @@ type PostListData struct {
 
 type FileStatus string
 
+/*
+title: "Graphql Schema Stitching"
+
+	description: "What Graphql schema stitching is and how it can help us"
+	markdown-path: blog/posts/graphql-schema-stitching.mdx
+	date: 2019-04-26
+	tags: ["javascript", "graphql", "api"]
+	metadata:
+	  hero-image-url: "graphql-schema-stitching.jpg"
+	  hero-image-author: "Aneta Pawlik"
+	  hero-image-author-url: "https://unsplash.com/@anetakpawlik?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
+*/
+type Page struct {
+	Title        string            `yaml:"title"`
+	Description  string            `yaml:"description"`
+	MarkdownPath string            `yaml:"markdown-path"`
+	PublishedAt  string            `yaml:"published-at"`
+	LastEditedAt string            `yaml:"last-edited-at"`
+	Tags         []string          `yaml:"tags"`
+	Metadata     map[string]string `yaml:"metadata"`
+}
+
+type Section struct {
+	Template     string `yaml:"template"`
+	PageTemplate string `yaml:"page-template"`
+	Pages        []Page `yaml:"pages"`
+}
+
+type ManifestFile struct {
+	Title          string             `yaml:"title"`
+	LayoutTemplate string             `yaml:"layout-template"`
+	Setions        map[string]Section `yaml:"sections"`
+}
+
 const (
 	Pending   FileStatus = "pending"
 	Started   FileStatus = "started"
@@ -60,29 +95,30 @@ const (
 
 // FileProgress represents a progress update for a file
 type FileProgress struct {
+	Section  string
 	Filename string
 	Status   FileStatus
 }
 
-//go:embed templates/post.html
-var postTemplateHTML string
+// //go:embed templates/post.html
+// var postTemplateHTML string
 
-//go:embed templates/postList.html
-var postListTemplateHTML string
+// //go:embed templates/postList.html
+// var postListTemplateHTML string
 
-//go:embed templates/layout.html
-var layoutTemplateHTML string
+// //go:embed templates/layout.html
+// var layoutTemplateHTML string
 
 // This should not be Global. Depends on the command to be executed.
 var postTemplate *template.Template
 var layoutTemplate *template.Template
 var postListTemplate *template.Template
 
-func init() {
-	postTemplate = template.Must(template.New("post").Parse(postTemplateHTML))
-	postListTemplate = template.Must(template.New("postList").Parse(postListTemplateHTML))
-	layoutTemplate = template.Must(template.New("layout").Parse(layoutTemplateHTML))
-}
+// func init() {
+// 	postTemplate = template.Must(template.New("post").Parse(postTemplateHTML))
+// 	postListTemplate = template.Must(template.New("postList").Parse(postListTemplateHTML))
+// 	layoutTemplate = template.Must(template.New("layout").Parse(layoutTemplateHTML))
+// }
 
 func generatePage(title string, content template.HTML, tmpl *template.Template, outputPath string) {
 	f, err := os.Create(outputPath)
@@ -153,133 +189,168 @@ func getPosts(postsPath string) []PostMeta {
 	return posts
 }
 
-func GenerateSite(postsPath, outputPath string) []FileProgress {
-	posts := getPosts(postsPath)
+func GenerateSite(manifestPath, outputPath string) []FileProgress {
+	// posts := getPosts(postsPath)
 
-	tags := make(map[string][]PostMeta)
-	for _, post := range posts {
-		for _, tag := range post.Tags {
-			tags[tag] = append(tags[tag], post)
-		}
-	}
-	fmt.Println("TAGS:", tags)
+	// tags := make(map[string][]PostMeta)
+	// for _, post := range posts {
+	// 	for _, tag := range post.Tags {
+	// 		tags[tag] = append(tags[tag], post)
+	// 	}
+	// }
+	// fmt.Println("TAGS:", tags)
 
-	//fmt.Println("POSTS:", posts)
+	// //fmt.Println("POSTS:", posts)
 	filesProgress := []FileProgress{}
 
-	os.MkdirAll(outputPath, 0755)
+	// os.MkdirAll(outputPath, 0755)
 
-	for _, post := range posts {
-		generatePostPage(post, postTemplate, outputPath)
+	// for _, post := range posts {
+	// 	generatePostPage(post, postTemplate, outputPath)
 
-		filesProgress = append(filesProgress, FileProgress{
-			Filename: post.Markdown,
-			Status:   Completed,
-		})
+	// 	filesProgress = append(filesProgress, FileProgress{
+	// 		Filename: post.Markdown,
+	// 		Status:   Completed,
+	// 	})
 
-	}
+	// }
 
-	// Generate post list
-	indexPath := filepath.Join(outputPath, "index.html")
-	generatePostList(posts, postListTemplate, indexPath)
+	// // Generate post list
+	// indexPath := filepath.Join(outputPath, "index.html")
+	// generatePostList(posts, postListTemplate, indexPath)
 
-	filesProgress = append(filesProgress, FileProgress{
-		Filename: indexPath,
-		Status:   Completed,
-	})
+	// filesProgress = append(filesProgress, FileProgress{
+	// 	Filename: indexPath,
+	// 	Status:   Completed,
+	// })
 
 	return filesProgress
 }
 
-func GenerateSiteAsync(postsPath, outputPath string) (<-chan FileProgress, []FileProgress) {
+func getManifest(manifestPath string) ManifestFile {
+	data, err := os.ReadFile(manifestPath)
+	if err != nil {
+		log.Fatalf("failed to read manifest file: %v", err)
+	}
+	var manifest ManifestFile
+	if err := yaml.Unmarshal(data, &manifest); err != nil {
+		log.Fatalf("failed to parse YAML: %v", err)
+	}
 
+	return manifest
+}
+
+func GenerateSiteAsync(manifestPath, outputPath string) <-chan FileProgress {
+
+	manifest := getManifest(manifestPath)
 	progressCh := make(chan FileProgress)
 
-	tagsPath := filepath.Join(outputPath, "tags")
-
-	posts := getPosts(postsPath)
-	indexPath := filepath.Join(outputPath, "index.html")
-
-	tags := make(map[string][]PostMeta)
-	for _, post := range posts {
-		for _, tag := range post.Tags {
-			tags[tag] = append(tags[tag], post)
-		}
-	}
-	fmt.Println("TAGS:", tags)
-
-	//fmt.Println("POSTS:", posts)
-	initialProgress := make([]FileProgress, len(posts)+1+len(tags))
-
-	initialProgress[0] = FileProgress{
-		Filename: indexPath,
-		Status:   Pending,
-	}
-
-	for i, post := range posts {
-		initialProgress[i+1] = FileProgress{
-			Filename: post.Markdown,
-			Status:   Pending,
-		}
-	}
-
-	i := 0
-	for tag, posts := range tags {
-		tagPath := filepath.Join(tagsPath, tag+".html")
-		initialProgress[i+1+len(posts)] = FileProgress{
-			Filename: tagPath,
-			Status:   Pending,
-		}
-		i++
-	}
-
-	os.MkdirAll(outputPath, 0755)
-	os.MkdirAll(outputPath, 0755)
-	os.MkdirAll(tagsPath, 0755)
-
+	fmt.Println("Sections:", manifest.Setions)
 	go func() {
 		var wg sync.WaitGroup
 
-		for _, post := range posts {
-			go func(p PostMeta) {
-				wg.Add(1)
-				defer wg.Done()
+		for sectionName, section := range manifest.Setions {
+			for _, page := range section.Pages {
+				go func(sectionName string, page Page) {
+					wg.Add(1)
+					defer wg.Done()
 
-				progressCh <- FileProgress{Filename: p.Markdown, Status: Started}
-
-				generatePostPage(p, postTemplate, outputPath)
-
-				progressCh <- FileProgress{Filename: p.Markdown, Status: Completed}
-			}(post)
-
+					fmt.Println("Generating page:", page.MarkdownPath)
+					progressCh <- FileProgress{Filename: page.MarkdownPath, Status: Started, Section: sectionName}
+					time.Sleep(1 * time.Second)
+					progressCh <- FileProgress{Filename: page.MarkdownPath, Status: Completed, Section: sectionName}
+				}(sectionName, page)
+			}
 		}
-		progressCh <- FileProgress{Filename: indexPath, Status: Started}
-
-		generatePostList(posts, postListTemplate, indexPath)
-
-		progressCh <- FileProgress{Filename: indexPath, Status: Completed}
-
-		for tag, posts := range tags {
-			go func(tag string, posts []PostMeta) {
-				wg.Add(1)
-				defer wg.Done()
-
-				tagPath := filepath.Join(tagsPath, tag+".html")
-				progressCh <- FileProgress{Filename: tagPath, Status: Started}
-
-				generatePostList(posts, postListTemplate, tagPath)
-
-				progressCh <- FileProgress{Filename: tagPath, Status: Completed}
-			}(tag, posts)
-
-		}
-
+		time.Sleep(100 * time.Millisecond)
 		wg.Wait()
 		close(progressCh)
 	}()
 
-	fmt.Println("returning progress channel")
-	return progressCh, initialProgress
+	// tagsPath := filepath.Join(outputPath, "tags")
+
+	// posts := getPosts(postsPath)
+	//indexPath := filepath.Join(outputPath, "index.html")
+
+	// tags := make(map[string][]PostMeta)
+	// for _, post := range posts {
+	// 	for _, tag := range post.Tags {
+	// 		tags[tag] = append(tags[tag], post)
+	// 	}
+	// }
+
+	//fmt.Println("POSTS:", posts)
+	//initialProgress := make([]FileProgress, len(posts)+1+len(tags))
+	// initialProgress := make([]FileProgress, 1)
+
+	// initialProgress[0] = FileProgress{
+	// 	Filename: indexPath,
+	// 	Status:   Pending,
+	// }
+
+	// for i, post := range posts {
+	// 	initialProgress[i+1] = FileProgress{
+	// 		Filename: post.Markdown,
+	// 		Status:   Pending,
+	// 	}
+	// }
+
+	// i := 0
+	// for tag, posts := range tags {
+	// 	tagPath := filepath.Join(tagsPath, tag+".html")
+	// 	initialProgress[i+1+len(posts)] = FileProgress{
+	// 		Filename: tagPath,
+	// 		Status:   Pending,
+	// 	}
+	// 	i++
+	// }
+
+	// os.MkdirAll(outputPath, 0755)
+	// os.MkdirAll(outputPath, 0755)
+	// os.MkdirAll(tagsPath, 0755)
+
+	// go func() {
+	// 	var wg sync.WaitGroup
+
+	// 	for _, post := range posts {
+	// 		go func(p PostMeta) {
+	// 			wg.Add(1)
+	// 			defer wg.Done()
+
+	// 			progressCh <- FileProgress{Filename: p.Markdown, Status: Started}
+
+	// 			generatePostPage(p, postTemplate, outputPath)
+
+	// 			progressCh <- FileProgress{Filename: p.Markdown, Status: Completed}
+	// 		}(post)
+
+	// 	}
+	// 	progressCh <- FileProgress{Filename: indexPath, Status: Started}
+
+	// 	generatePostList(posts, postListTemplate, indexPath)
+
+	// 	progressCh <- FileProgress{Filename: indexPath, Status: Completed}
+
+	// 	for tag, posts := range tags {
+	// 		go func(tag string, posts []PostMeta) {
+	// 			wg.Add(1)
+	// 			defer wg.Done()
+
+	// 			tagPath := filepath.Join(tagsPath, tag+".html")
+	// 			progressCh <- FileProgress{Filename: tagPath, Status: Started}
+
+	// 			generatePostList(posts, postListTemplate, tagPath)
+
+	// 			progressCh <- FileProgress{Filename: tagPath, Status: Completed}
+	// 		}(tag, posts)
+
+	// 	}
+
+	// 	wg.Wait()
+	// 	close(progressCh)
+	// }()
+
+	return progressCh
 }
 
 func slugify(s string) string {
