@@ -9,7 +9,7 @@ sections:
       - title: Understanding data loader
         published-at: 2020-07-19
         description: "Create a basic dataloader to understand this great library"
-        markdown-path: blog/posts/data-loader.mdx
+        markdown-path: blog/posts/data-loader.md
         tags: ["javascript", "dataloader"]
         metadata:
           hero-image-url: "data-loader.jpg"
@@ -18,7 +18,7 @@ sections:
 
       - title: "Talk, think, code"
         description: "Shifting focus in software development: from code-centric to the crucial interplay of conversation, contemplation, and coding"
-        markdown-path: blog/posts/talk-think-code.mdx
+        markdown-path: blog/posts/talk-think-code.md
         published-at: 2024-03-26
         tags: ["software", "tdd", "pair programming"]
         metadata:
@@ -28,7 +28,7 @@ sections:
 
       - title: "Local docker registry mirror"
         description: "Why I configured a docker registry in my local machine to improve my development process"
-        markdown-path: blog/posts/docker-registry-mirror.mdx
+        markdown-path: blog/posts/docker-registry-mirror.md
         published-at: 2022-09-05
         tags: ["docker", "development", "tools"]
         metadata:
@@ -38,7 +38,7 @@ sections:
 
       - title: "Function call cascading considered harmful"
         description: "Function call cascading hits the composability, testability and reusability of software components and should be avoided in preference for sequential and explicit function calling."
-        markdown-path: blog/posts/function-call-cascading.mdx
+        markdown-path: blog/posts/function-call-cascading.md
         published-at: 2019-04-26
         tags: ["software", "anti-patterns", "composition"]
         metadata:
@@ -48,7 +48,7 @@ sections:
 
       - title: "Resume Driven Development"
         description: "A reflection on technology choices in Software Engineering"
-        markdown-path: blog/posts/resume-driven-development.mdx
+        markdown-path: blog/posts/resume-driven-development.md
         published-at: 2024-04-01
         tags: ["software", "design", "project", "boring"]
         metadata:
@@ -58,7 +58,7 @@ sections:
 
       - title: "Decomplecting shape and optionality"
         description: "Separation between the shape of an entity and the optionality of its fields as a way of improving reusability and simplicity."
-        markdown-path: blog/posts/shape-vs-optionality.mdx
+        markdown-path: blog/posts/shape-vs-optionality.md
         published-at: 2022-08-28
         tags: ["schemas", "simplicity", "information"]
         metadata:
@@ -68,7 +68,7 @@ sections:
 
       - title: "Graphql Schema Stitching"
         description: "What Graphql schema stitching is and how it can help us"
-        markdown-path: blog/posts/graphql-schema-stitching.mdx
+        markdown-path: blog/posts/graphql-schema-stitching.md
         published-at: 2019-04-26
         tags: ["javascript", "graphql", "api"]
         metadata:

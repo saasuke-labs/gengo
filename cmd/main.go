@@ -6,6 +6,7 @@ import (
 	"blog-down/pkg/server"
 	"blog-down/pkg/watcher"
 	_ "embed"
+	"fmt"
 	"os"
 	"time"
 
@@ -33,7 +34,7 @@ func execGenerateSite(manifestPath, outputPath string) {
 		select {
 		case progress, ok := <-ch:
 			if !ok {
-				//fmt.Println("Channel closed")
+				fmt.Printf("Generated %d / %d files\n", completed, len(files))
 				return
 			}
 
