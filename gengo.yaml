@@ -5,8 +5,6 @@ default-section-template: "blog/layouts/section.html"
 
 sections:
   blog:
-    template: "blog/layours/postList.html"
-    page-template: "blog/layours/post.html"
     pages:
       - title: Understanding data loader
         published-at: 2020-07-19
@@ -54,9 +52,9 @@ sections:
         published-at: 2024-04-01
         tags: ["software", "design", "project", "boring"]
         metadata:
-        hero-image-url: "resume-driven-development.jpg"
-        hero-image-author: "Todd Kent"
-        hero-image-author-url: "https://unsplash.com/@churchoftodd?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
+          hero-image-url: "resume-driven-development.jpg"
+          hero-image-author: "Todd Kent"
+          hero-image-author-url: "https://unsplash.com/@churchoftodd?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
 
       - title: "Decomplecting shape and optionality"
         description: "Separation between the shape of an entity and the optionality of its fields as a way of improving reusability and simplicity."

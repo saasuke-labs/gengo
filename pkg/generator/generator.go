@@ -13,24 +13,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// type HeroImage struct {
-// 	Url         string `yaml:"url"`
-// 	Attribution struct {
-// 		Author string `yaml:"author"`
-// 		Url    string `yaml:"url"`
-// 	} `yaml:"attribution"`
-// }
-
-// type PostMeta struct {
-// 	Slug        string    `yaml:"slug"`
-// 	Title       string    `yaml:"title"`
-// 	Description string    `yaml:"description"`
-// 	Date        string    `yaml:"date"`
-// 	Tags        []string  `yaml:"tags"`
-// 	Markdown    string    `yaml:"markdown"`
-// 	HeroImage   HeroImage `yaml:"hero-image"`
-// }
-
 type PageData struct {
 	Title    string
 	Tags     []string
@@ -38,13 +20,10 @@ type PageData struct {
 	Metadata map[string]string
 }
 
-// type PostListData struct {
-// 	Posts []PostMeta
-// }
-
 type PageTask struct {
 	InputFile      string
 	OutputPath     string
+	Url            string
 	Template       string
 	LayoutTemplate string
 	Metadata       map[string]string
@@ -55,6 +34,13 @@ func (t PageTask) Generate() template.HTML {
 
 	html := generateMarkdownPage(t.InputFile)
 
+	html = applyTemplate(t.Template, PageData{
+		// See how to get the title from the HTML
+		Title:    "",
+		Tags:     t.Tags,
+		Metadata: t.Metadata,
+		HTML:     html,
+	})
 	html = applyTemplate(t.LayoutTemplate, PageData{
 		// See how to get the title from the HTML
 		Title:    "",
@@ -146,20 +132,6 @@ type FileProgress struct {
 	Status   FileStatus
 }
 
-func generatePage(title string, content template.HTML, layoutTemplate *template.Template, outputPath string) {
-	f, err := os.Create(outputPath)
-	if err != nil {
-		log.Fatalf("failed to create output file: %v", err)
-		return
-	}
-	defer f.Close()
-
-	layoutTemplate.Execute(f, PageData{
-		Title: title,
-		HTML:  content,
-	})
-}
-
 func savePage(content template.HTML, outputPath string) {
 	f, err := os.Create(outputPath)
 	if err != nil {
@@ -174,63 +146,6 @@ func savePage(content template.HTML, outputPath string) {
 		return
 	}
 }
-
-// func getPosts(postsPath string) []PostMeta {
-// 	data, err := os.ReadFile(postsPath)
-// 	if err != nil {
-// 		log.Fatalf("failed to read posts file: %v", err)
-// 	}
-// 	var posts []PostMeta
-// 	if err := yaml.Unmarshal(data, &posts); err != nil {
-// 		log.Fatalf("failed to parse YAML: %v", err)
-// 	}
-
-// 	for i, post := range posts {
-// 		if post.Slug == "" {
-// 			posts[i].Slug = slugify(post.Title)
-// 		}
-// 	}
-
-// 	return posts
-// }
-
-// func GenerateSite(manifestPath, outputPath string) []FileProgress {
-// 	// posts := getPosts(postsPath)
-
-// 	// tags := make(map[string][]PostMeta)
-// 	// for _, post := range posts {
-// 	// 	for _, tag := range post.Tags {
-// 	// 		tags[tag] = append(tags[tag], post)
-// 	// 	}
-// 	// }
-// 	// fmt.Println("TAGS:", tags)
-
-// 	// //fmt.Println("POSTS:", posts)
-// 	filesProgress := []FileProgress{}
-
-// 	// os.MkdirAll(outputPath, 0755)
-
-// 	// for _, post := range posts {
-// 	// 	generatePostPage(post, postTemplate, outputPath)
-
-// 	// 	filesProgress = append(filesProgress, FileProgress{
-// 	// 		Filename: post.Markdown,
-// 	// 		Status:   Completed,
-// 	// 	})
-
-// 	// }
-
-// 	// // Generate post list
-// 	// indexPath := filepath.Join(outputPath, "index.html")
-// 	// generatePostList(posts, postListTemplate, indexPath)
-
-// 	// filesProgress = append(filesProgress, FileProgress{
-// 	// 	Filename: indexPath,
-// 	// 	Status:   Completed,
-// 	// })
-
-// 	return filesProgress
-// }
 
 func getManifest(manifestPath string) ManifestFile {
 	data, err := os.ReadFile(manifestPath)
@@ -272,6 +187,8 @@ func calculateFilesToGenerate(manifest ManifestFile, outDir string) []Task {
 	tasks := make([]Task, 0)
 
 	for sectionName, section := range manifest.Setions {
+		tags := make(map[string][]Page)
+
 		sectionBasePath := filepath.Join(outDir, sectionName)
 		os.MkdirAll(sectionBasePath, 0755)
 
@@ -290,11 +207,35 @@ func calculateFilesToGenerate(manifest ManifestFile, outDir string) []Task {
 			tasks = append(tasks, PageTask{
 				InputFile:      page.MarkdownPath,
 				OutputPath:     outPath,
+				Url:            filepath.Join("/", sectionName, outputFilename),
 				Template:       manifest.DefaultPageTemplate,
 				LayoutTemplate: manifest.DefaultLayoutTemplate,
 				Metadata:       page.Metadata,
 				Tags:           page.Tags,
 			})
+
+			for _, tag := range page.Tags {
+				if _, ok := tags[tag]; !ok {
+					tags[tag] = make([]Page, 0)
+				}
+				tags[tag] = append(tags[tag], page)
+			}
+		}
+
+		tagsBasePath := filepath.Join(sectionBasePath, "tags")
+
+		for tag, pages := range tags {
+			tagPath := filepath.Join(tagsBasePath, slugify(tag)+".html")
+			os.MkdirAll(tagsBasePath, 0755)
+
+			// TODO - Create specific task for tags
+			tasks = append(tasks, &SectionTask{
+				OutputPath:     tagPath,
+				Template:       manifest.DefaultSectionTemplate,
+				LayoutTemplate: manifest.DefaultLayoutTemplate,
+				Pages:          pages,
+			})
+
 		}
 	}
 
@@ -338,154 +279,6 @@ func GenerateSiteAsync(manifestPath, outputDir string) ([]FileProgress, <-chan F
 		wg.Wait()
 		close(progressCh)
 	}()
-
-	//fmt.Println("Sections:", manifest.Setions)
-	// go func() {
-	// 	var wg sync.WaitGroup
-
-	// 	for sectionName, section := range manifest.Setions {
-	// 		for _, page := range section.Pages {
-	// 			go func(sectionName string, page Page) {
-	// 				wg.Add(1)
-	// 				defer wg.Done()
-
-	// 				sectionBasePath := filepath.Join(outputDir, sectionName)
-	// 				os.MkdirAll(sectionBasePath, 0755)
-
-	// 				progressCh <- FileProgress{Filename: page.MarkdownPath, Status: Started, Section: sectionName}
-
-	// 				outPath, html := generateMarkdownPage(MarkdownPage{
-	// 					Title:        page.Title,
-	// 					Description:  page.Description,
-	// 					MarkdownPath: page.MarkdownPath,
-	// 					PublishedAt:  page.PublishedAt,
-	// 					Tags:         page.Tags,
-	// 					Metadata:     page.Metadata,
-	// 				}, sectionBasePath)
-
-	// 				html = applyTemplate(manifest.DefaultPageTemplate, PageData{
-	// 					Title:    page.Title,
-	// 					Tags:     page.Tags,
-	// 					Metadata: page.Metadata,
-	// 					HTML:     html,
-	// 				})
-
-	// 				html = applyTemplate(manifest.DefaultLayoutTemplate, PageData{
-	// 					Title:    page.Title,
-	// 					Tags:     page.Tags,
-	// 					Metadata: page.Metadata,
-	// 					HTML:     html,
-	// 				})
-
-	// 				savePage(html, outPath)
-
-	// 				progressCh <- FileProgress{Filename: page.MarkdownPath, Status: Completed, Section: sectionName}
-	// 			}(sectionName, page)
-	// 		}
-	// 	}
-	// 	time.Sleep(100 * time.Millisecond)
-	// 	wg.Wait()
-	// 	close(progressCh)
-	// }()
-
-	// tagsPath := filepath.Join(outputPath, "tags")
-
-	// posts := getPosts(postsPath)
-	//indexPath := filepath.Join(outputPath, "index.html")
-
-	// tags := make(map[string][]PostMeta)
-	// for _, post := range posts {
-	// 	for _, tag := range post.Tags {
-	// 		tags[tag] = append(tags[tag], post)
-	// 	}
-	// }
-
-	//fmt.Println("POSTS:", posts)
-	//initialProgress := make([]FileProgress, len(posts)+1+len(tags))
-	// initialProgress := make([]FileProgress, 1)
-
-	// initialProgress[0] = FileProgress{
-	// 	Filename: indexPath,
-	// 	Status:   Pending,
-	// }
-
-	// for i, post := range posts {
-	// 	initialProgress[i+1] = FileProgress{
-	// 		Filename: post.Markdown,
-	// 		Status:   Pending,
-	// 	}
-	// }
-
-	// i := 0
-	// for tag, posts := range tags {
-	// 	tagPath := filepath.Join(tagsPath, tag+".html")
-	// 	initialProgress[i+1+len(posts)] = FileProgress{
-	// 		Filename: tagPath,
-	// 		Status:   Pending,
-	// 	}
-	// 	i++
-	// }
-
-	// os.MkdirAll(outputPath, 0755)
-	// os.MkdirAll(outputPath, 0755)
-	// os.MkdirAll(tagsPath, 0755)
-
-	// go func() {
-	// 	var wg sync.WaitGroup
-
-	// 	for _, post := range posts {
-	// 		go func(p PostMeta) {
-	// 			wg.Add(1)
-	// 			defer wg.Done()
-
-	// 			progressCh <- FileProgress{Filename: p.Markdown, Status: Started}
-
-	// 			generatePostPage(p, postTemplate, outputPath)
-
-	// 			progressCh <- FileProgress{Filename: p.Markdown, Status: Completed}
-	// 		}(post)
-
-	// 	}
-	// 	progressCh <- FileProgress{Filename: indexPath, Status: Started}
-
-	// 	generatePostList(posts, postListTemplate, indexPath)
-
-	// 	progressCh <- FileProgress{Filename: indexPath, Status: Completed}
-
-	// 	for tag, posts := range tags {
-	// 		go func(tag string, posts []PostMeta) {
-	// 			wg.Add(1)
-	// 			defer wg.Done()
-
-	// 			tagPath := filepath.Join(tagsPath, tag+".html")
-	// 			progressCh <- FileProgress{Filename: tagPath, Status: Started}
-
-	// 			generatePostList(posts, postListTemplate, tagPath)
-
-	// 			progressCh <- FileProgress{Filename: tagPath, Status: Completed}
-	// 		}(tag, posts)
-
-	// 	}
-
-	// 	wg.Wait()
-	// 	close(progressCh)
-	// }()
-
-	// files := make([]FileProgress, 0)
-	// for sectionName, section := range manifest.Setions {
-	// 	files = append(files, FileProgress{
-	// 		Filename: path.Join(sectionName, "index.html"),
-	// 		Status:   Pending,
-	// 		Section:  sectionName,
-	// 	})
-	// 	for _, page := range section.Pages {
-	// 		files = append(files, FileProgress{
-	// 			Filename: page.MarkdownPath,
-	// 			Status:   Pending,
-	// 			Section:  sectionName,
-	// 		})
-	// 	}
-	// }
 
 	return files, progressCh
 }
