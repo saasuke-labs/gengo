@@ -6,11 +6,9 @@ import (
 	"html/template"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
-	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -44,20 +42,68 @@ type PageData struct {
 // 	Posts []PostMeta
 // }
 
+type PageTask struct {
+	InputFile      string
+	OutputPath     string
+	Template       string
+	LayoutTemplate string
+	Metadata       map[string]string
+	Tags           []string
+}
+
+func (t PageTask) Generate() template.HTML {
+
+	html := generateMarkdownPage(t.InputFile)
+
+	html = applyTemplate(t.LayoutTemplate, PageData{
+		// See how to get the title from the HTML
+		Title:    "",
+		Tags:     t.Tags,
+		Metadata: t.Metadata,
+		HTML:     html,
+	})
+
+	return html
+}
+
+type SectionTask struct {
+	OutputPath     string
+	Template       string
+	LayoutTemplate string
+	Pages          []Page
+}
+
+type SectionData struct {
+	Pages []Page
+}
+
+func (t SectionTask) Generate() template.HTML {
+	html := bytes.NewBufferString("")
+	tmpl := template.Must(template.ParseFiles(t.Template))
+
+	tmpl.Execute(html, SectionData{
+		Pages: t.Pages,
+	})
+
+	html2 := applyTemplate(t.LayoutTemplate, PageData{
+		// See how to get the title from the HTML
+		Title: "",
+		HTML:  template.HTML(html.String()),
+	})
+
+	return html2
+}
+
+func (t PageTask) GetOutputPath() string {
+	return t.OutputPath
+}
+
+func (t SectionTask) GetOutputPath() string {
+	return t.OutputPath
+}
+
 type FileStatus string
 
-/*
-title: "Graphql Schema Stitching"
-
-	description: "What Graphql schema stitching is and how it can help us"
-	markdown-path: blog/posts/graphql-schema-stitching.mdx
-	date: 2019-04-26
-	tags: ["javascript", "graphql", "api"]
-	metadata:
-	  hero-image-url: "graphql-schema-stitching.jpg"
-	  hero-image-author: "Aneta Pawlik"
-	  hero-image-author-url: "https://unsplash.com/@anetakpawlik?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
-*/
 type Page struct {
 	Title        string            `yaml:"title"`
 	Description  string            `yaml:"description"`
@@ -82,6 +128,11 @@ type ManifestFile struct {
 	Setions                map[string]Section `yaml:"sections"`
 }
 
+type Task interface {
+	Generate() template.HTML
+	GetOutputPath() string
+}
+
 const (
 	Pending   FileStatus = "pending"
 	Started   FileStatus = "started"
@@ -91,30 +142,9 @@ const (
 
 // FileProgress represents a progress update for a file
 type FileProgress struct {
-	Section  string
 	Filename string
 	Status   FileStatus
 }
-
-// //go:embed templates/post.html
-// var postTemplateHTML string
-
-// //go:embed templates/postList.html
-// var postListTemplateHTML string
-
-// //go:embed templates/layout.html
-// var layoutTemplateHTML string
-
-// This should not be Global. Depends on the command to be executed.
-var postTemplate *template.Template
-var layoutTemplate *template.Template
-var postListTemplate *template.Template
-
-// func init() {
-// 	postTemplate = template.Must(template.New("post").Parse(postTemplateHTML))
-// 	postListTemplate = template.Must(template.New("postList").Parse(postListTemplateHTML))
-// 	layoutTemplate = template.Must(template.New("layout").Parse(layoutTemplateHTML))
-// }
 
 func generatePage(title string, content template.HTML, layoutTemplate *template.Template, outputPath string) {
 	f, err := os.Create(outputPath)
@@ -144,16 +174,6 @@ func savePage(content template.HTML, outputPath string) {
 		return
 	}
 }
-
-// func generatePostList(posts []PostMeta, tmpl *template.Template, outputPath string) {
-// 	html := bytes.NewBufferString("")
-
-// 	tmpl.Execute(html, PostListData{
-// 		Posts: posts,
-// 	})
-
-// 	generatePage("Posts", template.HTML(html.String()), tmpl, outputPath)
-// }
 
 // func getPosts(postsPath string) []PostMeta {
 // 	data, err := os.ReadFile(postsPath)
@@ -241,59 +261,132 @@ func applyTemplate(templatePath string, data PageData) template.HTML {
 	return template.HTML(html.String())
 }
 
+func convertExtension(path, newExt string) string {
+	base := filepath.Base(path)                         // e.g. "graphql-schema-stitching.mdx"
+	ext := filepath.Ext(base)                           // e.g. ".mdx"
+	name := strings.TrimSuffix(base, ext)               // e.g. "graphql-schema-stitching"
+	return name + "." + strings.TrimPrefix(newExt, ".") // e.g. "graphql-schema-stitching.html"
+}
+
+func calculateFilesToGenerate(manifest ManifestFile, outDir string) []Task {
+	tasks := make([]Task, 0)
+
+	for sectionName, section := range manifest.Setions {
+		sectionBasePath := filepath.Join(outDir, sectionName)
+		os.MkdirAll(sectionBasePath, 0755)
+
+		outPath := filepath.Join(sectionBasePath, "index.html")
+
+		tasks = append(tasks, &SectionTask{
+			OutputPath:     outPath,
+			Template:       manifest.DefaultSectionTemplate,
+			LayoutTemplate: manifest.DefaultLayoutTemplate,
+			Pages:          section.Pages,
+		})
+
+		for _, page := range section.Pages {
+			outputFilename := convertExtension(page.MarkdownPath, ".html")
+			outPath := filepath.Join(sectionBasePath, outputFilename)
+			tasks = append(tasks, PageTask{
+				InputFile:      page.MarkdownPath,
+				OutputPath:     outPath,
+				Template:       manifest.DefaultPageTemplate,
+				LayoutTemplate: manifest.DefaultLayoutTemplate,
+				Metadata:       page.Metadata,
+				Tags:           page.Tags,
+			})
+		}
+	}
+
+	return tasks
+}
+
 func GenerateSiteAsync(manifestPath, outputDir string) ([]FileProgress, <-chan FileProgress) {
 
 	manifest := getManifest(manifestPath)
 	progressCh := make(chan FileProgress)
 
-	//fmt.Println("Sections:", manifest.Setions)
+	filesToGenerate := calculateFilesToGenerate(manifest, outputDir)
+
+	files := make([]FileProgress, len(filesToGenerate))
+	for idx, fileToGenerate := range filesToGenerate {
+
+		files[idx] = FileProgress{
+			Filename: fileToGenerate.GetOutputPath(),
+			Status:   Pending,
+		}
+	}
+
 	go func() {
 		var wg sync.WaitGroup
 
-		for sectionName, section := range manifest.Setions {
-			for _, page := range section.Pages {
-				go func(sectionName string, page Page) {
-					wg.Add(1)
-					defer wg.Done()
+		for _, task := range filesToGenerate {
+			wg.Add(1)
+			go func(task Task) {
+				defer wg.Done()
 
-					sectionBasePath := filepath.Join(outputDir, sectionName)
-					os.MkdirAll(sectionBasePath, 0755)
+				progressCh <- FileProgress{Filename: task.GetOutputPath(), Status: Started}
 
-					progressCh <- FileProgress{Filename: page.MarkdownPath, Status: Started, Section: sectionName}
+				html := task.Generate()
 
-					outPath, html := generateMarkdownPage(MarkdownPage{
-						Title:        page.Title,
-						Description:  page.Description,
-						MarkdownPath: page.MarkdownPath,
-						PublishedAt:  page.PublishedAt,
-						Tags:         page.Tags,
-						Metadata:     page.Metadata,
-					}, sectionBasePath)
+				savePage(html, task.GetOutputPath())
 
-					html = applyTemplate(manifest.DefaultPageTemplate, PageData{
-						Title:    page.Title,
-						Tags:     page.Tags,
-						Metadata: page.Metadata,
-						HTML:     html,
-					})
-
-					html = applyTemplate(manifest.DefaultLayoutTemplate, PageData{
-						Title:    page.Title,
-						Tags:     page.Tags,
-						Metadata: page.Metadata,
-						HTML:     html,
-					})
-
-					savePage(html, outPath)
-
-					progressCh <- FileProgress{Filename: page.MarkdownPath, Status: Completed, Section: sectionName}
-				}(sectionName, page)
-			}
+				progressCh <- FileProgress{Filename: task.GetOutputPath(), Status: Completed}
+			}(task)
 		}
-		time.Sleep(100 * time.Millisecond)
+
 		wg.Wait()
 		close(progressCh)
 	}()
+
+	//fmt.Println("Sections:", manifest.Setions)
+	// go func() {
+	// 	var wg sync.WaitGroup
+
+	// 	for sectionName, section := range manifest.Setions {
+	// 		for _, page := range section.Pages {
+	// 			go func(sectionName string, page Page) {
+	// 				wg.Add(1)
+	// 				defer wg.Done()
+
+	// 				sectionBasePath := filepath.Join(outputDir, sectionName)
+	// 				os.MkdirAll(sectionBasePath, 0755)
+
+	// 				progressCh <- FileProgress{Filename: page.MarkdownPath, Status: Started, Section: sectionName}
+
+	// 				outPath, html := generateMarkdownPage(MarkdownPage{
+	// 					Title:        page.Title,
+	// 					Description:  page.Description,
+	// 					MarkdownPath: page.MarkdownPath,
+	// 					PublishedAt:  page.PublishedAt,
+	// 					Tags:         page.Tags,
+	// 					Metadata:     page.Metadata,
+	// 				}, sectionBasePath)
+
+	// 				html = applyTemplate(manifest.DefaultPageTemplate, PageData{
+	// 					Title:    page.Title,
+	// 					Tags:     page.Tags,
+	// 					Metadata: page.Metadata,
+	// 					HTML:     html,
+	// 				})
+
+	// 				html = applyTemplate(manifest.DefaultLayoutTemplate, PageData{
+	// 					Title:    page.Title,
+	// 					Tags:     page.Tags,
+	// 					Metadata: page.Metadata,
+	// 					HTML:     html,
+	// 				})
+
+	// 				savePage(html, outPath)
+
+	// 				progressCh <- FileProgress{Filename: page.MarkdownPath, Status: Completed, Section: sectionName}
+	// 			}(sectionName, page)
+	// 		}
+	// 	}
+	// 	time.Sleep(100 * time.Millisecond)
+	// 	wg.Wait()
+	// 	close(progressCh)
+	// }()
 
 	// tagsPath := filepath.Join(outputPath, "tags")
 
@@ -378,21 +471,21 @@ func GenerateSiteAsync(manifestPath, outputDir string) ([]FileProgress, <-chan F
 	// 	close(progressCh)
 	// }()
 
-	files := make([]FileProgress, 0)
-	for sectionName, section := range manifest.Setions {
-		files = append(files, FileProgress{
-			Filename: path.Join(sectionName, "index.html"),
-			Status:   Pending,
-			Section:  sectionName,
-		})
-		for _, page := range section.Pages {
-			files = append(files, FileProgress{
-				Filename: page.MarkdownPath,
-				Status:   Pending,
-				Section:  sectionName,
-			})
-		}
-	}
+	// files := make([]FileProgress, 0)
+	// for sectionName, section := range manifest.Setions {
+	// 	files = append(files, FileProgress{
+	// 		Filename: path.Join(sectionName, "index.html"),
+	// 		Status:   Pending,
+	// 		Section:  sectionName,
+	// 	})
+	// 	for _, page := range section.Pages {
+	// 		files = append(files, FileProgress{
+	// 			Filename: page.MarkdownPath,
+	// 			Status:   Pending,
+	// 			Section:  sectionName,
+	// 		})
+	// 	}
+	// }
 
 	return files, progressCh
 }
