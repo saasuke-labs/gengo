@@ -1,11 +1,11 @@
 package main
 
 import (
+	"blog-down/pkg/cli"
 	"blog-down/pkg/generator"
 	"blog-down/pkg/server"
 	"blog-down/pkg/watcher"
 	_ "embed"
-	"fmt"
 	"os"
 	"time"
 
@@ -16,38 +16,34 @@ import (
 var rootCmd cobra.Command
 
 func execGenerateSite(manifestPath, outputPath string) {
-	ch := generator.GenerateSiteAsync(manifestPath, outputPath)
+	files, ch := generator.GenerateSiteAsync(manifestPath, outputPath)
 
-	// files := []string{}
-	// filesStatuses := map[string]generator.FileStatus{}
-	// completed := 0
+	filesStatuses := make(map[string]generator.FileStatus)
+	fileNames := make([]string, len(files))
 
-	// sectionIndex := map[string]int{}
-	// fileIndex := map[string]int{}
+	for i, file := range files {
+		fileNames[i] = file.Filename
+		filesStatuses[file.Filename] = file.Status
+	}
 
-	// for _, fileProgress := range filesProgress {
-	// 	files = append(files, fileProgress.Filename)
-	// 	filesStatuses[fileProgress.Filename] = fileProgress.Status
-	// }
+	completed := 0
 
-	// cli.UpdateScreen("Files progress:", files, filesStatuses, completed, len(files))
-
-	fmt.Println("Waiting for updates...")
+	//fmt.Println("Waiting for updates...")
 	for {
 		select {
 		case progress, ok := <-ch:
 			if !ok {
-				// Channel closed, processing complete
 				//fmt.Println("Channel closed")
 				return
 			}
-			fmt.Println("Received update:", progress.Filename, progress.Status)
-			// Update our state
-			//filesStatuses[progress.Filename] = progress.Status
-			// if progress.Status == generator.Completed || progress.Status == generator.Failed {
-			// 	completed++
-			// }
-			//cli.UpdateScreen("Files progress:", files, filesStatuses, completed, len(files))
+
+			if progress.Status == generator.Completed || progress.Status == generator.Failed {
+				completed++
+			}
+
+			filesStatuses[progress.Filename] = progress.Status
+
+			cli.UpdateScreen("Files progress:", fileNames, filesStatuses, completed, len(files))
 
 		default:
 			// No updates available, wait a bit before refreshing
@@ -85,14 +81,14 @@ func init() {
 
 			if watchMode {
 				// TODO - See how to find this directory from posts.yaml
-				go watcher.WatchDir("./blog/posts", func(file string) {
+				go watcher.WatchDir("./blog", func(file string) {
 					// TODO - Optimize and generate only the changed file
-					fmt.Println(("Generating site..."))
+					//fmt.Println(("Generating site..."))
 					execGenerateSite(manifestPath, outputPath)
 
 				})
 
-				fmt.Println("Press any key to exit...")
+				//fmt.Println("Press any key to exit...")
 				var b []byte = make([]byte, 1)
 				os.Stdin.Read(b)
 			}

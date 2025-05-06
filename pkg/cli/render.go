@@ -78,8 +78,12 @@ func renderFileList(files []string, fileStatuses map[string]generator.FileStatus
 }
 
 // renderProgressBar renders a fancy progress bar
-func renderProgressBar(completed, total int) string {
-	percent := float64(completed) / float64(total)
+func RenderProgressBar(completed, total int) string {
+	percent := float64(0)
+
+	if total > 0 {
+		percent = float64(completed) / float64(total)
+	}
 	percentInt := int(percent * 100)
 
 	// Get terminal width for responsive progress bar
@@ -117,6 +121,6 @@ func UpdateScreen(title string, files []string, fileStatuses map[string]generato
 	fmt.Print(renderFileList(files, fileStatuses))
 
 	// Render progress bar
-	fmt.Println(renderProgressBar(completed, total))
+	fmt.Println(RenderProgressBar(completed, total))
 
 }

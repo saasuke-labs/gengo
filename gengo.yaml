@@ -1,5 +1,7 @@
 title: Tsoobame
-layout-template: "blog/layouts/layout.html"
+default-layout-template: "blog/layouts/layout.html"
+default-page-template: "blog/layouts/page.html"
+default-section-template: "blog/layouts/section.html"
 
 sections:
   blog:

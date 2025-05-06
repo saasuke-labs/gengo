@@ -1,13 +1,12 @@
 package generator
 
 import (
-	"blog-down/pkg/parser"
 	"bytes"
 	_ "embed"
-	"fmt"
 	"html/template"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -16,39 +15,34 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type HeroImage struct {
-	Url         string `yaml:"url"`
-	Attribution struct {
-		Author string `yaml:"author"`
-		Url    string `yaml:"url"`
-	} `yaml:"attribution"`
-}
+// type HeroImage struct {
+// 	Url         string `yaml:"url"`
+// 	Attribution struct {
+// 		Author string `yaml:"author"`
+// 		Url    string `yaml:"url"`
+// 	} `yaml:"attribution"`
+// }
 
-type PostMeta struct {
-	Slug        string    `yaml:"slug"`
-	Title       string    `yaml:"title"`
-	Description string    `yaml:"description"`
-	Date        string    `yaml:"date"`
-	Tags        []string  `yaml:"tags"`
-	Markdown    string    `yaml:"markdown"`
-	HeroImage   HeroImage `yaml:"hero-image"`
-}
+// type PostMeta struct {
+// 	Slug        string    `yaml:"slug"`
+// 	Title       string    `yaml:"title"`
+// 	Description string    `yaml:"description"`
+// 	Date        string    `yaml:"date"`
+// 	Tags        []string  `yaml:"tags"`
+// 	Markdown    string    `yaml:"markdown"`
+// 	HeroImage   HeroImage `yaml:"hero-image"`
+// }
 
 type PageData struct {
-	Title string
-	HTML  template.HTML
+	Title    string
+	Tags     []string
+	HTML     template.HTML
+	Metadata map[string]string
 }
 
-type PostPageData struct {
-	Title     string
-	HeroImage HeroImage
-	Tags      []string
-	Article   template.HTML
-}
-
-type PostListData struct {
-	Posts []PostMeta
-}
+// type PostListData struct {
+// 	Posts []PostMeta
+// }
 
 type FileStatus string
 
@@ -81,9 +75,11 @@ type Section struct {
 }
 
 type ManifestFile struct {
-	Title          string             `yaml:"title"`
-	LayoutTemplate string             `yaml:"layout-template"`
-	Setions        map[string]Section `yaml:"sections"`
+	Title                  string             `yaml:"title"`
+	DefaultLayoutTemplate  string             `yaml:"default-layout-template"`
+	DefaultPageTemplate    string             `yaml:"default-page-template"`
+	DefaultSectionTemplate string             `yaml:"default-section-template"`
+	Setions                map[string]Section `yaml:"sections"`
 }
 
 const (
@@ -120,7 +116,7 @@ var postListTemplate *template.Template
 // 	layoutTemplate = template.Must(template.New("layout").Parse(layoutTemplateHTML))
 // }
 
-func generatePage(title string, content template.HTML, tmpl *template.Template, outputPath string) {
+func generatePage(title string, content template.HTML, layoutTemplate *template.Template, outputPath string) {
 	f, err := os.Create(outputPath)
 	if err != nil {
 		log.Fatalf("failed to create output file: %v", err)
@@ -134,98 +130,87 @@ func generatePage(title string, content template.HTML, tmpl *template.Template, 
 	})
 }
 
-func generatePostList(posts []PostMeta, tmpl *template.Template, outputPath string) {
-	html := bytes.NewBufferString("")
-
-	tmpl.Execute(html, PostListData{
-		Posts: posts,
-	})
-
-	generatePage("Posts", template.HTML(html.String()), tmpl, outputPath)
-}
-
-func generatePostPage(post PostMeta, tmpl *template.Template, outputPath string) {
-
-	htmlPage := parser.MarkdownToHtml(post.Markdown)
-
-	title := post.Title
-	if title == "" {
-		title = htmlPage.Title
-	}
-
-	if post.Slug == "" {
-		post.Slug = slugify(title)
-	}
-
-	outFile := filepath.Join(outputPath, post.Slug+".html")
-
-	html := bytes.NewBufferString("")
-	tmpl.Execute(html, PostPageData{
-		Title:     title,
-		HeroImage: post.HeroImage,
-		Tags:      post.Tags,
-		Article:   htmlPage.HTML,
-	})
-
-	generatePage(title, template.HTML(html.String()), tmpl, outFile)
-}
-
-func getPosts(postsPath string) []PostMeta {
-	data, err := os.ReadFile(postsPath)
+func savePage(content template.HTML, outputPath string) {
+	f, err := os.Create(outputPath)
 	if err != nil {
-		log.Fatalf("failed to read posts file: %v", err)
+		log.Fatalf("failed to create output file: %v", err)
+		return
 	}
-	var posts []PostMeta
-	if err := yaml.Unmarshal(data, &posts); err != nil {
-		log.Fatalf("failed to parse YAML: %v", err)
-	}
+	defer f.Close()
 
-	for i, post := range posts {
-		if post.Slug == "" {
-			posts[i].Slug = slugify(post.Title)
-		}
+	_, err = f.WriteString(string(content))
+	if err != nil {
+		log.Fatalf("failed to write to output file: %v", err)
+		return
 	}
-
-	return posts
 }
 
-func GenerateSite(manifestPath, outputPath string) []FileProgress {
-	// posts := getPosts(postsPath)
+// func generatePostList(posts []PostMeta, tmpl *template.Template, outputPath string) {
+// 	html := bytes.NewBufferString("")
 
-	// tags := make(map[string][]PostMeta)
-	// for _, post := range posts {
-	// 	for _, tag := range post.Tags {
-	// 		tags[tag] = append(tags[tag], post)
-	// 	}
-	// }
-	// fmt.Println("TAGS:", tags)
+// 	tmpl.Execute(html, PostListData{
+// 		Posts: posts,
+// 	})
 
-	// //fmt.Println("POSTS:", posts)
-	filesProgress := []FileProgress{}
+// 	generatePage("Posts", template.HTML(html.String()), tmpl, outputPath)
+// }
 
-	// os.MkdirAll(outputPath, 0755)
+// func getPosts(postsPath string) []PostMeta {
+// 	data, err := os.ReadFile(postsPath)
+// 	if err != nil {
+// 		log.Fatalf("failed to read posts file: %v", err)
+// 	}
+// 	var posts []PostMeta
+// 	if err := yaml.Unmarshal(data, &posts); err != nil {
+// 		log.Fatalf("failed to parse YAML: %v", err)
+// 	}
 
-	// for _, post := range posts {
-	// 	generatePostPage(post, postTemplate, outputPath)
+// 	for i, post := range posts {
+// 		if post.Slug == "" {
+// 			posts[i].Slug = slugify(post.Title)
+// 		}
+// 	}
 
-	// 	filesProgress = append(filesProgress, FileProgress{
-	// 		Filename: post.Markdown,
-	// 		Status:   Completed,
-	// 	})
+// 	return posts
+// }
 
-	// }
+// func GenerateSite(manifestPath, outputPath string) []FileProgress {
+// 	// posts := getPosts(postsPath)
 
-	// // Generate post list
-	// indexPath := filepath.Join(outputPath, "index.html")
-	// generatePostList(posts, postListTemplate, indexPath)
+// 	// tags := make(map[string][]PostMeta)
+// 	// for _, post := range posts {
+// 	// 	for _, tag := range post.Tags {
+// 	// 		tags[tag] = append(tags[tag], post)
+// 	// 	}
+// 	// }
+// 	// fmt.Println("TAGS:", tags)
 
-	// filesProgress = append(filesProgress, FileProgress{
-	// 	Filename: indexPath,
-	// 	Status:   Completed,
-	// })
+// 	// //fmt.Println("POSTS:", posts)
+// 	filesProgress := []FileProgress{}
 
-	return filesProgress
-}
+// 	// os.MkdirAll(outputPath, 0755)
+
+// 	// for _, post := range posts {
+// 	// 	generatePostPage(post, postTemplate, outputPath)
+
+// 	// 	filesProgress = append(filesProgress, FileProgress{
+// 	// 		Filename: post.Markdown,
+// 	// 		Status:   Completed,
+// 	// 	})
+
+// 	// }
+
+// 	// // Generate post list
+// 	// indexPath := filepath.Join(outputPath, "index.html")
+// 	// generatePostList(posts, postListTemplate, indexPath)
+
+// 	// filesProgress = append(filesProgress, FileProgress{
+// 	// 	Filename: indexPath,
+// 	// 	Status:   Completed,
+// 	// })
+
+// 	return filesProgress
+// }
 
 func getManifest(manifestPath string) ManifestFile {
 	data, err := os.ReadFile(manifestPath)
@@ -240,12 +225,28 @@ func getManifest(manifestPath string) ManifestFile {
 	return manifest
 }
 
-func GenerateSiteAsync(manifestPath, outputPath string) <-chan FileProgress {
+func applyTemplate(templatePath string, data PageData) template.HTML {
+
+	tmpl := template.Must(template.ParseFiles(templatePath))
+
+	html := bytes.NewBufferString("")
+
+	err := tmpl.Execute(html, data)
+
+	if err != nil {
+		log.Fatalf("failed to execute template: %v", err)
+		return ""
+	}
+
+	return template.HTML(html.String())
+}
+
+func GenerateSiteAsync(manifestPath, outputDir string) ([]FileProgress, <-chan FileProgress) {
 
 	manifest := getManifest(manifestPath)
 	progressCh := make(chan FileProgress)
 
-	fmt.Println("Sections:", manifest.Setions)
+	//fmt.Println("Sections:", manifest.Setions)
 	go func() {
 		var wg sync.WaitGroup
 
@@ -255,9 +256,36 @@ func GenerateSiteAsync(manifestPath, outputPath string) <-chan FileProgress {
 					wg.Add(1)
 					defer wg.Done()
 
-					fmt.Println("Generating page:", page.MarkdownPath)
+					sectionBasePath := filepath.Join(outputDir, sectionName)
+					os.MkdirAll(sectionBasePath, 0755)
+
 					progressCh <- FileProgress{Filename: page.MarkdownPath, Status: Started, Section: sectionName}
-					time.Sleep(1 * time.Second)
+
+					outPath, html := generateMarkdownPage(MarkdownPage{
+						Title:        page.Title,
+						Description:  page.Description,
+						MarkdownPath: page.MarkdownPath,
+						PublishedAt:  page.PublishedAt,
+						Tags:         page.Tags,
+						Metadata:     page.Metadata,
+					}, sectionBasePath)
+
+					html = applyTemplate(manifest.DefaultPageTemplate, PageData{
+						Title:    page.Title,
+						Tags:     page.Tags,
+						Metadata: page.Metadata,
+						HTML:     html,
+					})
+
+					html = applyTemplate(manifest.DefaultLayoutTemplate, PageData{
+						Title:    page.Title,
+						Tags:     page.Tags,
+						Metadata: page.Metadata,
+						HTML:     html,
+					})
+
+					savePage(html, outPath)
+
 					progressCh <- FileProgress{Filename: page.MarkdownPath, Status: Completed, Section: sectionName}
 				}(sectionName, page)
 			}
@@ -350,7 +378,23 @@ func GenerateSiteAsync(manifestPath, outputPath string) <-chan FileProgress {
 	// 	close(progressCh)
 	// }()
 
-	return progressCh
+	files := make([]FileProgress, 0)
+	for sectionName, section := range manifest.Setions {
+		files = append(files, FileProgress{
+			Filename: path.Join(sectionName, "index.html"),
+			Status:   Pending,
+			Section:  sectionName,
+		})
+		for _, page := range section.Pages {
+			files = append(files, FileProgress{
+				Filename: page.MarkdownPath,
+				Status:   Pending,
+				Section:  sectionName,
+			})
+		}
+	}
+
+	return files, progressCh
 }
 
 func slugify(s string) string {
