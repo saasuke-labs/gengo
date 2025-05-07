@@ -1,7 +1,8 @@
 # Gengo
 
-![logo](docs/static/logo.png)
-
+<p align="center">
+  <img src="docs/static/logo.png" alt="Logo" width="200"/>
+</p>
 A fast, pluggable static site generator written in Go. Designed to render content from a manifest file and display progress interactively (via terminal UI) or plainly for CI environments.
 
 ---
