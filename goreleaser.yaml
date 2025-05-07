@@ -23,9 +23,9 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
-signs:
-  - artifacts: checksum
-    args: ["--detach-sign"]
+# signs:
+#   - artifacts: checksum
+#     args: ["--detach-sign"]
 
 release:
   draft: false
