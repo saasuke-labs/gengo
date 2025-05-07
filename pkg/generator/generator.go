@@ -2,7 +2,6 @@ package generator
 
 import (
 	"bytes"
-	_ "embed"
 	"html/template"
 	"log"
 	"os"

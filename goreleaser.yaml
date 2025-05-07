@@ -1,0 +1,34 @@
+project_name: gengo
+builds:
+  - id: gengo
+    main: ./cmd/main.go
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - "-X main.version={{.Version}} -X main.commit={{.ShortCommit}} -X main.date={{.Date}}"
+
+archives:
+  - id: archive
+    format: tar.gz
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "checksums.txt"
+
+signs:
+  - artifacts: checksum
+    args: ["--detach-sign"]
+
+release:
+  draft: false
+  prerelease: auto
+  github:
+    owner: tonitienda
+    name: gengo

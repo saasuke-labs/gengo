@@ -1,9 +1,9 @@
 package generator
 
 import (
-	"blog-down/pkg/parser"
-	_ "embed"
 	"html/template"
+
+	"github.com/tonitienda/gengo/pkg/parser"
 )
 
 func generateMarkdownPage(markdownPath string) template.HTML {

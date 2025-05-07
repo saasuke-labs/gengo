@@ -1,10 +1,11 @@
 package cli
 
 import (
-	"blog-down/pkg/generator"
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/tonitienda/gengo/pkg/generator"
 
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"

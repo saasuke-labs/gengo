@@ -1,20 +1,26 @@
 package main
 
 import (
-	"blog-down/pkg/cli"
-	"blog-down/pkg/generator"
-	"blog-down/pkg/server"
-	"blog-down/pkg/watcher"
-	_ "embed"
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/tonitienda/gengo/pkg/cli"
+	"github.com/tonitienda/gengo/pkg/generator"
+	"github.com/tonitienda/gengo/pkg/server"
+	"github.com/tonitienda/gengo/pkg/watcher"
 
 	"github.com/spf13/cobra"
 	_ "github.com/yuin/goldmark/extension"
 )
 
 var rootCmd cobra.Command
+
+var (
+	version string = "undefined"
+	commit  string = "undefined"
+	date    string = "undefined"
+)
 
 func execGenerateSite(manifestPath, outputPath string) {
 	files, ch := generator.GenerateSiteAsync(manifestPath, outputPath)
@@ -101,6 +107,14 @@ func init() {
 	var watchMode bool
 	var plainMode bool
 
+	var versionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "Print the version",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("Version: %s\nCommit: %s\nBuild Date: %s\n", version, commit, date)
+		},
+	}
+
 	var generateCmd = &cobra.Command{
 		Use:   "generate",
 		Short: "Generate the static site",
@@ -149,6 +163,7 @@ func init() {
 
 	rootCmd.AddCommand(generateCmd)
 	rootCmd.AddCommand(serveCmd)
+	rootCmd.AddCommand(versionCmd)
 }
 
 func main() {
