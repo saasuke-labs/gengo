@@ -5,6 +5,9 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/tonitienda/gengo/pkg/testutils"
 )
 
 func prepareDirectories(testName string) (string, string, string) {
@@ -22,7 +25,7 @@ func prepareDirectories(testName string) (string, string, string) {
 }
 func TestGeneration(t *testing.T) {
 
-	absInput, absOutput, _ := prepareDirectories("simple-blog")
+	absInput, absOutput, absExpectedOutput := prepareDirectories("simple-blog")
 	os.RemoveAll(absOutput)
 
 	SilentGenerate(path.Join(absInput, "gengo.yaml"), absOutput)
@@ -30,5 +33,12 @@ func TestGeneration(t *testing.T) {
 	if _, err := os.Stat(absOutput); os.IsNotExist(err) {
 		t.Fatalf("Output directory was not created: %v", err)
 	}
+
+	assert.FileExists(t, path.Join(absOutput, "blog/blog1.html"))
+
+	assert.True(t, testutils.CompareHtmlFiles(
+		path.Join(absOutput, "blog/blog1.html"),
+		path.Join(absExpectedOutput, "blog/blog1.html"),
+	))
 
 }

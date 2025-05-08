@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -22,7 +23,7 @@ type PageData struct {
 
 type PageTask struct {
 	InputFile      string
-	OutputPath     string
+	OutputFile     string
 	Url            string
 	Template       string
 	LayoutTemplate string
@@ -53,7 +54,7 @@ func (t PageTask) Generate() template.HTML {
 }
 
 type SectionTask struct {
-	OutputPath     string
+	OutputFile     string
 	Template       string
 	LayoutTemplate string
 	Pages          []Page
@@ -81,11 +82,11 @@ func (t SectionTask) Generate() template.HTML {
 }
 
 func (t PageTask) GetOutputPath() string {
-	return t.OutputPath
+	return t.OutputFile
 }
 
 func (t SectionTask) GetOutputPath() string {
-	return t.OutputPath
+	return t.OutputFile
 }
 
 type FileStatus string
@@ -111,7 +112,7 @@ type ManifestFile struct {
 	DefaultLayoutTemplate  string             `yaml:"default-layout-template"`
 	DefaultPageTemplate    string             `yaml:"default-page-template"`
 	DefaultSectionTemplate string             `yaml:"default-section-template"`
-	Setions                map[string]Section `yaml:"sections"`
+	Sections               map[string]Section `yaml:"sections"`
 }
 
 type Task interface {
@@ -133,6 +134,13 @@ type FileProgress struct {
 }
 
 func savePage(content template.HTML, outputPath string) {
+	// Create the output directory if it doesn't exist
+	// TODO - Optimize and create the directory only once for each section
+	dir := filepath.Dir(outputPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		log.Fatalf("failed to create output directory: %v", err)
+		return
+	}
 	f, err := os.Create(outputPath)
 	if err != nil {
 		log.Fatalf("failed to create output file: %v", err)
@@ -183,33 +191,37 @@ func convertExtension(path, newExt string) string {
 	return name + "." + strings.TrimPrefix(newExt, ".") // e.g. "graphql-schema-stitching.html"
 }
 
-func calculateFilesToGenerate(manifest ManifestFile, outDir string) []Task {
+func calculateFilesToGenerate(manifest ManifestFile, baseDir, outDir string) []Task {
 	tasks := make([]Task, 0)
 
-	for sectionName, section := range manifest.Setions {
+	for sectionName, section := range manifest.Sections {
 		tags := make(map[string][]Page)
 
 		sectionBasePath := filepath.Join(outDir, sectionName)
-		os.MkdirAll(sectionBasePath, 0755)
 
-		outPath := filepath.Join(sectionBasePath, "index.html")
+		// Do not generate the section page if there is no template configured
+		if manifest.DefaultSectionTemplate != "" {
+			os.MkdirAll(sectionBasePath, 0755)
 
-		tasks = append(tasks, &SectionTask{
-			OutputPath:     outPath,
-			Template:       manifest.DefaultSectionTemplate,
-			LayoutTemplate: manifest.DefaultLayoutTemplate,
-			Pages:          section.Pages,
-		})
+			outFile := filepath.Join(sectionBasePath, "index.html")
+
+			tasks = append(tasks, &SectionTask{
+				OutputFile:     outFile,
+				Template:       path.Join(baseDir, manifest.DefaultSectionTemplate),
+				LayoutTemplate: path.Join(baseDir, manifest.DefaultLayoutTemplate),
+				Pages:          section.Pages,
+			})
+		}
 
 		for _, page := range section.Pages {
 			outputFilename := convertExtension(page.MarkdownPath, ".html")
 			outPath := filepath.Join(sectionBasePath, outputFilename)
 			tasks = append(tasks, PageTask{
-				InputFile:      page.MarkdownPath,
-				OutputPath:     outPath,
+				InputFile:      path.Join(baseDir, page.MarkdownPath),
+				OutputFile:     outPath,
 				Url:            filepath.Join("/", sectionName, outputFilename),
-				Template:       manifest.DefaultPageTemplate,
-				LayoutTemplate: manifest.DefaultLayoutTemplate,
+				Template:       path.Join(baseDir, manifest.DefaultPageTemplate),
+				LayoutTemplate: path.Join(baseDir, manifest.DefaultLayoutTemplate),
 				Metadata:       page.Metadata,
 				Tags:           page.Tags,
 			})
@@ -225,14 +237,14 @@ func calculateFilesToGenerate(manifest ManifestFile, outDir string) []Task {
 		tagsBasePath := filepath.Join(sectionBasePath, "tags")
 
 		for tag, pages := range tags {
-			tagPath := filepath.Join(tagsBasePath, slugify(tag)+".html")
+			tagOutputFile := filepath.Join(tagsBasePath, slugify(tag)+".html")
 			os.MkdirAll(tagsBasePath, 0755)
 
 			// TODO - Create specific task for tags
 			tasks = append(tasks, &SectionTask{
-				OutputPath:     tagPath,
-				Template:       manifest.DefaultSectionTemplate,
-				LayoutTemplate: manifest.DefaultLayoutTemplate,
+				OutputFile:     tagOutputFile,
+				Template:       path.Join(baseDir, manifest.DefaultSectionTemplate),
+				LayoutTemplate: path.Join(baseDir, manifest.DefaultLayoutTemplate),
 				Pages:          pages,
 			})
 
@@ -245,11 +257,12 @@ func calculateFilesToGenerate(manifest ManifestFile, outDir string) []Task {
 func GenerateSiteAsync(manifestPath, outputDir string) ([]FileProgress, <-chan FileProgress) {
 
 	manifest := getManifest(manifestPath)
+	baseDir := filepath.Dir(manifestPath)
 
 	fmt.Println("Generating site...", manifest)
 	progressCh := make(chan FileProgress)
 
-	filesToGenerate := calculateFilesToGenerate(manifest, outputDir)
+	filesToGenerate := calculateFilesToGenerate(manifest, baseDir, outputDir)
 
 	files := make([]FileProgress, len(filesToGenerate))
 	for idx, fileToGenerate := range filesToGenerate {
