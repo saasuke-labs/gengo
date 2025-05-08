@@ -2,6 +2,7 @@ package generator
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"log"
 	"os"
@@ -244,6 +245,8 @@ func calculateFilesToGenerate(manifest ManifestFile, outDir string) []Task {
 func GenerateSiteAsync(manifestPath, outputDir string) ([]FileProgress, <-chan FileProgress) {
 
 	manifest := getManifest(manifestPath)
+
+	fmt.Println("Generating site...", manifest)
 	progressCh := make(chan FileProgress)
 
 	filesToGenerate := calculateFilesToGenerate(manifest, outputDir)

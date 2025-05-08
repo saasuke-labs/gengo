@@ -1,0 +1,7 @@
+default-layout-template: "layout.html"
+default-page-template: "page.html"
+
+blog:
+  pages:
+    - title: "My First Post"
+      markdown-path: blog1.md

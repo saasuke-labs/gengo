@@ -2,13 +2,9 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"time"
 
 	"github.com/tonitienda/gengo/pkg/cli"
-	"github.com/tonitienda/gengo/pkg/generator"
 	"github.com/tonitienda/gengo/pkg/server"
-	"github.com/tonitienda/gengo/pkg/watcher"
 
 	"github.com/spf13/cobra"
 	_ "github.com/yuin/goldmark/extension"
@@ -22,76 +18,42 @@ var (
 	date    string = "undefined"
 )
 
-func execGenerateSite(manifestPath, outputPath string) {
-	files, ch := generator.GenerateSiteAsync(manifestPath, outputPath)
-
-	filesStatuses := make(map[string]generator.FileStatus)
-	fileNames := make([]string, len(files))
-
-	for i, file := range files {
-		fileNames[i] = file.Filename
-		filesStatuses[file.Filename] = file.Status
-	}
-
-	completed := 0
-
-	//fmt.Println("Waiting for updates...")
-	for {
-		select {
-		case progress, ok := <-ch:
-			if !ok {
-				fmt.Printf("Generated %d / %d files\n", completed, len(files))
-				return
-			}
-
-			if progress.Status == generator.Completed || progress.Status == generator.Failed {
-				completed++
-			}
-
-			filesStatuses[progress.Filename] = progress.Status
-
-			cli.UpdateScreen("Files progress:", fileNames, filesStatuses, completed, len(files))
-
-		default:
-			// No updates available, wait a bit before refreshing
-			time.Sleep(100 * time.Millisecond)
-		}
-	}
-
-}
-
-func execGenerateSiteSilent(manifestPath, outputPath string) {
-	files, ch := generator.GenerateSiteAsync(manifestPath, outputPath)
-
-	completed := 0
-
-	//fmt.Println("Waiting for updates...")
-	for {
-		select {
-		case progress, ok := <-ch:
-			if !ok {
-				fmt.Printf("Generated %d / %d files\n", completed, len(files))
-				return
-			}
-
-			if progress.Status == generator.Completed || progress.Status == generator.Failed {
-				completed++
-				fmt.Printf("File %s: %s\n", progress.Filename, progress.Status)
-			}
-
-		default:
-			// No updates available, wait a bit before refreshing
-			time.Sleep(100 * time.Millisecond)
-		}
-	}
-
-}
-
 func execServeSite(sitePath string, watchMode bool, port int) {
 	server.Serve(sitePath, watchMode, port)
 }
 
+func NewGenerateCommand() *cobra.Command {
+
+	var manifestPath string
+	var outputPath string
+	var watchMode bool
+	var plainMode bool
+
+	var generateCmd = &cobra.Command{
+		Use:   "generate",
+		Short: "Generate the static site",
+		Long:  `Generate the static site from the manifest.yaml file and output it to the specified directory.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			if plainMode {
+				cli.SilentGenerate(manifestPath, outputPath)
+				return
+			}
+			cli.Generate(manifestPath, outputPath, watchMode)
+		},
+	}
+
+	generateCmd.Flags().StringVar(&manifestPath, "manifest", "gengo.yaml", "Path to the manifest file")
+	generateCmd.Flags().StringVar(&outputPath, "output", "output", "Output directory")
+	generateCmd.Flags().BoolVar(&watchMode, "watch", false, "Enable watch mode with hot reload")
+	generateCmd.Flags().BoolVar(&plainMode, "plain", false, "Plain output. Useful for non-interactive shell")
+
+	return generateCmd
+}
+
 func init() {
+
+	var sitePath string
+	var watchMode bool
 
 	rootCmd = cobra.Command{
 		Use:   "gengo",
@@ -101,12 +63,6 @@ func init() {
 		},
 	}
 
-	var manifestPath string
-	var sitePath string
-	var outputPath string
-	var watchMode bool
-	var plainMode bool
-
 	var versionCmd = &cobra.Command{
 		Use:   "version",
 		Short: "Print the version",
@@ -114,38 +70,6 @@ func init() {
 			fmt.Printf("Version: %s\nCommit: %s\nBuild Date: %s\n", version, commit, date)
 		},
 	}
-
-	var generateCmd = &cobra.Command{
-		Use:   "generate",
-		Short: "Generate the static site",
-		Long:  `Generate the static site from the manifest.yaml file and output it to the specified directory.`,
-		Run: func(cmd *cobra.Command, args []string) {
-			if plainMode {
-				execGenerateSiteSilent(manifestPath, outputPath)
-				return
-			}
-			execGenerateSite(manifestPath, outputPath)
-
-			if watchMode {
-				// TODO - See how to find this directory from posts.yaml
-				go watcher.WatchDir("./blog", func(file string) {
-					// TODO - Optimize and generate only the changed file
-					//fmt.Println(("Generating site..."))
-					execGenerateSite(manifestPath, outputPath)
-
-				})
-
-				//fmt.Println("Press any key to exit...")
-				var b []byte = make([]byte, 1)
-				os.Stdin.Read(b)
-			}
-		},
-	}
-
-	generateCmd.Flags().StringVar(&manifestPath, "manifest", "gengo.yaml", "Path to the manifest file")
-	generateCmd.Flags().StringVar(&outputPath, "output", "output", "Output directory")
-	generateCmd.Flags().BoolVar(&watchMode, "watch", false, "Enable watch mode with hot reload")
-	generateCmd.Flags().BoolVar(&plainMode, "plain", false, "Plain output. Useful for non-interactive shell")
 
 	var serveCmd = &cobra.Command{
 		Use:   "serve",
@@ -161,7 +85,7 @@ func init() {
 	serveCmd.Flags().StringVar(&sitePath, "site", "site", "Site directory")
 	serveCmd.Flags().BoolVar(&watchMode, "watch", false, "Enable watch mode with hot reload")
 
-	rootCmd.AddCommand(generateCmd)
+	rootCmd.AddCommand(NewGenerateCommand())
 	rootCmd.AddCommand(serveCmd)
 	rootCmd.AddCommand(versionCmd)
 }
