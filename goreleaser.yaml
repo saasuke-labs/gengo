@@ -31,5 +31,5 @@ release:
   draft: false
   prerelease: auto
   github:
-    owner: tonitienda
+    owner: saasuke-labs
     name: gengo
