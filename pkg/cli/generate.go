@@ -5,9 +5,48 @@ import (
 	"os"
 	"time"
 
+	"github.com/spf13/cobra"
 	"github.com/tonitienda/gengo/pkg/generator"
+	"github.com/tonitienda/gengo/pkg/telemetry"
 	"github.com/tonitienda/gengo/pkg/watcher"
 )
+
+func NewGenerateCommand() *cobra.Command {
+
+	var manifestPath string
+	var outputPath string
+	var watchMode bool
+	var plainMode bool
+
+	var generateCmd = &cobra.Command{
+		Use:   "generate",
+		Short: "Generate the static site",
+		Long:  `Generate the static site from the manifest.yaml file and output it to the specified directory.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			defer telemetry.Close()
+			telemetry.Track("generate-started", map[string]interface{}{
+				"command": "generate",
+				"plain":   plainMode,
+			})
+			if plainMode {
+				SilentGenerate(manifestPath, outputPath)
+				return
+			}
+			Generate(manifestPath, outputPath, watchMode)
+			telemetry.Track("generate-completed", map[string]interface{}{
+				"command": "generate",
+				"plain":   plainMode,
+			})
+		},
+	}
+
+	generateCmd.Flags().StringVar(&manifestPath, "manifest", "gengo.yaml", "Path to the manifest file")
+	generateCmd.Flags().StringVar(&outputPath, "output", "output", "Output directory")
+	generateCmd.Flags().BoolVar(&watchMode, "watch", false, "Enable watch mode with hot reload")
+	generateCmd.Flags().BoolVar(&plainMode, "plain", false, "Plain output. Useful for non-interactive shell")
+
+	return generateCmd
+}
 
 func generate(manifestPath, outputPath string) {
 	files, ch := generator.GenerateSiteAsync(manifestPath, outputPath)
