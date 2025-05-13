@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/posthog/posthog-go"
-	"github.com/tonitienda/gengo/pkg/version"
+	"github.com/saasuke-labs/gengo/pkg/version"
 )
 
 const (

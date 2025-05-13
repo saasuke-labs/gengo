@@ -36,10 +36,10 @@ curl -fsSL https://raw.githubusercontent.com/saasuke-labs/gengo/main/install/ins
 
 ## 📦 Installation
 
-Download a release binary from [Releases](https://github.com/tonitienda/gengo/releases) or build from source:
+Download a release binary from [Releases](https://github.com/saasuke-labs/gengo/releases) or build from source:
 
 ```bash
-git clone https://github.com/tonitienda/gengo
+git clone https://github.com/saasuke-labs/gengo
 cd gengo
 go build -o gengo ./cmd/main.go
 ```

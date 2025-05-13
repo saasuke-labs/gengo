@@ -3,8 +3,8 @@ package cli
 import (
 	"fmt"
 
+	"github.com/saasuke-labs/gengo/pkg/version"
 	"github.com/spf13/cobra"
-	"github.com/tonitienda/gengo/pkg/version"
 )
 
 func NewVersionCommand() *cobra.Command {

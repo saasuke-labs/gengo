@@ -1,4 +1,4 @@
-module github.com/tonitienda/gengo
+module github.com/saasuke-labs/gengo
 
 go 1.24.0
 

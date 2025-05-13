@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/tonitienda/gengo/pkg/cli"
-	"github.com/tonitienda/gengo/pkg/server"
+	"github.com/saasuke-labs/gengo/pkg/cli"
+	"github.com/saasuke-labs/gengo/pkg/server"
 
 	"github.com/spf13/cobra"
 	_ "github.com/yuin/goldmark/extension"

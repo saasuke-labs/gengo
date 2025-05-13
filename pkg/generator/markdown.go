@@ -3,7 +3,7 @@ package generator
 import (
 	"html/template"
 
-	"github.com/tonitienda/gengo/pkg/parser"
+	"github.com/saasuke-labs/gengo/pkg/parser"
 )
 
 func generateMarkdownPage(markdownPath string) template.HTML {

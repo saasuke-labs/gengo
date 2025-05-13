@@ -5,10 +5,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/saasuke-labs/gengo/pkg/generator"
+	"github.com/saasuke-labs/gengo/pkg/telemetry"
+	"github.com/saasuke-labs/gengo/pkg/watcher"
 	"github.com/spf13/cobra"
-	"github.com/tonitienda/gengo/pkg/generator"
-	"github.com/tonitienda/gengo/pkg/telemetry"
-	"github.com/tonitienda/gengo/pkg/watcher"
 )
 
 func NewGenerateCommand() *cobra.Command {

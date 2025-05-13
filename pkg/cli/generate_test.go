@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/saasuke-labs/gengo/pkg/testutils"
 	"github.com/stretchr/testify/assert"
-	"github.com/tonitienda/gengo/pkg/testutils"
 )
 
 func TestIntegrationGenerate(t *testing.T) {

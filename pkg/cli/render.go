@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/tonitienda/gengo/pkg/generator"
+	"github.com/saasuke-labs/gengo/pkg/generator"
 
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
