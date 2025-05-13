@@ -10,7 +10,7 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - "-X gengo/version.version={{.Version}} -X gengo/version.commit={{.ShortCommit}} -X gengo/version.date={{.Date}}"
+      - "-X gengo/version.Version={{.Version}} -X gengo/version.Commit={{.ShortCommit}} -X gengo/version.Date={{.Date}}"
 
 archives:
   - id: archive
