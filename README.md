@@ -7,6 +7,22 @@ A fast, pluggable static site generator written in Go. Designed to render conten
 
 ---
 
+## Installation
+
+To install Gengo you can download the tar files from github releases:
+
+https://github.com/saasuke-labs/gengo/releases
+
+download the target version, uncompress the file and add it to your path.
+In case that you found the package somewhere else, do not forget to double check the checksums
+that are part of each release.
+
+Or you can use the script to install the latest version:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/saasuke-labs/gengo/main/install/install.sh | bash
+```
+
 ## 🚀 Features
 
 - 🧩 Section-based manifest to organize pages (e.g., `blog`, `projects`)
