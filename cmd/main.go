@@ -49,35 +49,6 @@ func init() {
 func main() {
 	rootCmd.Execute()
 
-	// files := []string{"file1.md", "file2.md", "file3.md"}
-	// statuses := []cli.FileStatus{cli.Started, cli.Completed}
-
-	// fileStatuses := map[string]cli.FileStatus{}
-	// for _, file := range files {
-	// 	fileStatuses[file] = cli.Pending
-	// }
-
-	// i := 0
-	// status := 0
-	// completed := 0
-
-	// for {
-	// 	status = (status + 1) % len(statuses)
-
-	// 	if status == 0 {
-	// 		i++
-	// 	}
-
-	// 	if status == len(statuses)-1 {
-	// 		completed++
-	// 	}
-	// 	fileStatuses[files[i]] = statuses[status]
-
-	// 	cli.UpdateScreen("This is a test", files, fileStatuses, completed, len(files))
-	// 	time.Sleep(1 * time.Second)
-
-	// }
-
 }
 
 // func watchAndRebuild(manifestPath, outputPath string) {

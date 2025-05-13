@@ -19,6 +19,8 @@ type PageData struct {
 	Tags     []string
 	HTML     template.HTML
 	Metadata map[string]string
+	Section  string
+	Sections []string
 }
 
 type PageTask struct {
@@ -29,6 +31,8 @@ type PageTask struct {
 	LayoutTemplate string
 	Metadata       map[string]string
 	Tags           []string
+	Section        string
+	Sections       []string
 }
 
 func (t PageTask) Generate() template.HTML {
@@ -48,12 +52,26 @@ func (t PageTask) Generate() template.HTML {
 		Tags:     t.Tags,
 		Metadata: t.Metadata,
 		HTML:     html,
+		Section:  t.Section,
+		Sections: t.Sections,
 	})
 
 	return html
 }
 
+type HomeData struct {
+}
+
+type HomeTask struct {
+	Sections       []string
+	OutputFile     string
+	Template       string
+	LayoutTemplate string
+}
+
 type SectionTask struct {
+	Section        string
+	Sections       []string
 	OutputFile     string
 	Template       string
 	LayoutTemplate string
@@ -61,6 +79,8 @@ type SectionTask struct {
 }
 
 type SectionData struct {
+	Section string
+
 	Pages []Page
 }
 
@@ -69,13 +89,33 @@ func (t SectionTask) Generate() template.HTML {
 	tmpl := template.Must(template.ParseFiles(t.Template))
 
 	tmpl.Execute(html, SectionData{
-		Pages: t.Pages,
+		Section: t.Section,
+		Pages:   t.Pages,
 	})
 
 	html2 := applyTemplate(t.LayoutTemplate, PageData{
 		// See how to get the title from the HTML
-		Title: "",
-		HTML:  template.HTML(html.String()),
+		Title:    "",
+		HTML:     template.HTML(html.String()),
+		Section:  t.Section,
+		Sections: t.Sections,
+	})
+
+	return html2
+}
+
+func (t HomeTask) Generate() template.HTML {
+	html := bytes.NewBufferString("")
+	tmpl := template.Must(template.ParseFiles(t.Template))
+
+	tmpl.Execute(html, HomeData{})
+
+	html2 := applyTemplate(t.LayoutTemplate, PageData{
+		// See how to get the title from the HTML
+		Title:    "",
+		HTML:     template.HTML(html.String()),
+		Sections: t.Sections,
+		Section:  "",
 	})
 
 	return html2
@@ -89,6 +129,10 @@ func (t SectionTask) GetOutputPath() string {
 	return t.OutputFile
 }
 
+func (t HomeTask) GetOutputPath() string {
+	return t.OutputFile
+}
+
 type FileStatus string
 
 type Page struct {
@@ -99,6 +143,11 @@ type Page struct {
 	LastEditedAt string            `yaml:"last-edited-at"`
 	Tags         []string          `yaml:"tags"`
 	Metadata     map[string]string `yaml:"metadata"`
+	Section      string
+}
+
+func (p *Page) OutFileName() string {
+	return convertExtension(p.MarkdownPath, ".html")
 }
 
 type Section struct {
@@ -112,6 +161,7 @@ type ManifestFile struct {
 	DefaultLayoutTemplate  string             `yaml:"default-layout-template"`
 	DefaultPageTemplate    string             `yaml:"default-page-template"`
 	DefaultSectionTemplate string             `yaml:"default-section-template"`
+	HomeTemplate           string             `yaml:"home-template"`
 	Sections               map[string]Section `yaml:"sections"`
 }
 
@@ -156,6 +206,7 @@ func savePage(content template.HTML, outputPath string) {
 }
 
 func getManifest(manifestPath string) ManifestFile {
+	log.Printf("Reading manifest file: %s", manifestPath)
 	data, err := os.ReadFile(manifestPath)
 	if err != nil {
 		log.Fatalf("failed to read manifest file: %v", err)
@@ -194,6 +245,22 @@ func convertExtension(path, newExt string) string {
 func calculateFilesToGenerate(manifest ManifestFile, baseDir, outDir string) []Task {
 	tasks := make([]Task, 0)
 
+	sections := make([]string, 0)
+	for section, _ := range manifest.Sections {
+		sections = append(sections, section)
+	}
+
+	if manifest.HomeTemplate != "" {
+		homePath := filepath.Join(outDir, "index.html")
+
+		tasks = append(tasks, &HomeTask{
+			Sections:       sections,
+			OutputFile:     homePath,
+			Template:       path.Join(baseDir, manifest.HomeTemplate),
+			LayoutTemplate: path.Join(baseDir, manifest.DefaultLayoutTemplate),
+		})
+	}
+
 	for sectionName, section := range manifest.Sections {
 		tags := make(map[string][]Page)
 
@@ -206,6 +273,8 @@ func calculateFilesToGenerate(manifest ManifestFile, baseDir, outDir string) []T
 			outFile := filepath.Join(sectionBasePath, "index.html")
 
 			tasks = append(tasks, &SectionTask{
+				Section:        sectionName,
+				Sections:       sections,
 				OutputFile:     outFile,
 				Template:       path.Join(baseDir, manifest.DefaultSectionTemplate),
 				LayoutTemplate: path.Join(baseDir, manifest.DefaultLayoutTemplate),
@@ -224,6 +293,8 @@ func calculateFilesToGenerate(manifest ManifestFile, baseDir, outDir string) []T
 				LayoutTemplate: path.Join(baseDir, manifest.DefaultLayoutTemplate),
 				Metadata:       page.Metadata,
 				Tags:           page.Tags,
+				Section:        sectionName,
+				Sections:       sections,
 			})
 
 			for _, tag := range page.Tags {
@@ -246,6 +317,8 @@ func calculateFilesToGenerate(manifest ManifestFile, baseDir, outDir string) []T
 				Template:       path.Join(baseDir, manifest.DefaultSectionTemplate),
 				LayoutTemplate: path.Join(baseDir, manifest.DefaultLayoutTemplate),
 				Pages:          pages,
+				Section:        sectionName,
+				Sections:       sections,
 			})
 
 		}
