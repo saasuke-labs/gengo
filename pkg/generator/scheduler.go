@@ -14,6 +14,16 @@ type Task interface {
 func scheduleTasks(manifest ManifestFile, baseDir, outDir string) []Task {
 	tasks := make([]Task, 0)
 
+	// Copy static files
+	for _, asset := range manifest.StaticAssets {
+		assetPath := path.Join(baseDir, asset.Path)
+		outPath := path.Join(outDir, asset.Destination)
+		tasks = append(tasks, &CopyTask{
+			FromPath: assetPath,
+			ToPath:   outPath,
+		})
+	}
+
 	sections := make([]string, 0)
 	for section, _ := range manifest.Sections {
 		sections = append(sections, section)
