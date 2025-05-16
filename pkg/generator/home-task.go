@@ -9,6 +9,7 @@ type HomeData struct {
 }
 
 type HomeTask struct {
+	Title          string
 	Sections       []string
 	OutputFile     string
 	Template       string
@@ -23,8 +24,7 @@ func (t HomeTask) Execute() error {
 	tmpl.Execute(html, HomeData{})
 
 	html2 := applyTemplate(t.LayoutTemplate, PageData{
-		// See how to get the title from the HTML
-		Title:    "",
+		Title:    t.Title,
 		HTML:     template.HTML(html.String()),
 		Sections: t.Sections,
 		Section:  "",

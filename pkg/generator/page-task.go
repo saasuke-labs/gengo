@@ -14,6 +14,7 @@ type PageData struct {
 }
 
 type PageTask struct {
+	Title          string
 	InputFile      string
 	OutputFile     string
 	Url            string
@@ -37,8 +38,7 @@ func (t PageTask) Execute() error {
 		HTML:     html,
 	})
 	html = applyTemplate(t.LayoutTemplate, PageData{
-		// See how to get the title from the HTML
-		Title:    "",
+		Title:    t.Title,
 		Tags:     t.Tags,
 		Metadata: t.Metadata,
 		HTML:     html,

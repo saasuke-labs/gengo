@@ -33,6 +33,7 @@ func scheduleTasks(manifest ManifestFile, baseDir, outDir string) []Task {
 		homePath := filepath.Join(outDir, "index.html")
 
 		tasks = append(tasks, &HomeTask{
+			Title:          manifest.Title,
 			Sections:       sections,
 			OutputFile:     homePath,
 			Template:       path.Join(baseDir, manifest.HomeTemplate),
@@ -52,6 +53,7 @@ func scheduleTasks(manifest ManifestFile, baseDir, outDir string) []Task {
 			outFile := filepath.Join(sectionBasePath, "index.html")
 
 			tasks = append(tasks, &SectionTask{
+				Title:          manifest.Title,
 				Section:        sectionName,
 				Sections:       sections,
 				OutputFile:     outFile,
@@ -65,6 +67,7 @@ func scheduleTasks(manifest ManifestFile, baseDir, outDir string) []Task {
 			outputFilename := convertExtension(page.MarkdownPath, ".html")
 			outPath := filepath.Join(sectionBasePath, outputFilename)
 			tasks = append(tasks, PageTask{
+				Title:          manifest.Title,
 				InputFile:      path.Join(baseDir, page.MarkdownPath),
 				OutputFile:     outPath,
 				Url:            filepath.Join("/", sectionName, outputFilename),
@@ -92,6 +95,7 @@ func scheduleTasks(manifest ManifestFile, baseDir, outDir string) []Task {
 
 			// TODO - Create specific task for tags
 			tasks = append(tasks, &SectionTask{
+				Title:          manifest.Title,
 				OutputFile:     tagOutputFile,
 				Template:       path.Join(baseDir, manifest.DefaultSectionTemplate),
 				LayoutTemplate: path.Join(baseDir, manifest.DefaultLayoutTemplate),

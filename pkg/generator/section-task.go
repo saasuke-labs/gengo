@@ -6,6 +6,7 @@ import (
 )
 
 type SectionTask struct {
+	Title          string
 	Section        string
 	Sections       []string
 	OutputFile     string
@@ -30,8 +31,7 @@ func (t SectionTask) Execute() error {
 	})
 
 	html2 := applyTemplate(t.LayoutTemplate, PageData{
-		// See how to get the title from the HTML
-		Title:    "",
+		Title:    t.Title,
 		HTML:     template.HTML(html.String()),
 		Section:  t.Section,
 		Sections: t.Sections,
