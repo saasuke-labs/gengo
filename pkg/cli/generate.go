@@ -13,7 +13,7 @@ import (
 
 func NewGenerateCommand() *cobra.Command {
 
-	var manifestPath string
+	var manifestPaths []string
 	var outputPath string
 	var watchMode bool
 	var plainMode bool
@@ -29,10 +29,10 @@ func NewGenerateCommand() *cobra.Command {
 				"plain":   plainMode,
 			})
 			if plainMode {
-				SilentGenerate(manifestPath, outputPath)
+				SilentGenerate(manifestPaths, outputPath)
 				return
 			}
-			Generate(manifestPath, outputPath, watchMode)
+			Generate(manifestPaths, outputPath, watchMode)
 			telemetry.Track("generate-completed", map[string]interface{}{
 				"command": "generate",
 				"plain":   plainMode,
@@ -40,7 +40,7 @@ func NewGenerateCommand() *cobra.Command {
 		},
 	}
 
-	generateCmd.Flags().StringVar(&manifestPath, "manifest", "gengo.yaml", "Path to the manifest file")
+	generateCmd.Flags().StringArrayVar(&manifestPaths, "manifest", []string{"gengo.yaml"}, "Path to the manifest file")
 	generateCmd.Flags().StringVar(&outputPath, "output", "output", "Output directory")
 	generateCmd.Flags().BoolVar(&watchMode, "watch", false, "Enable watch mode with hot reload")
 	generateCmd.Flags().BoolVar(&plainMode, "plain", false, "Plain output. Useful for non-interactive shell")
@@ -48,8 +48,8 @@ func NewGenerateCommand() *cobra.Command {
 	return generateCmd
 }
 
-func generate(manifestPath, outputPath string) {
-	files, ch := generator.GenerateSiteAsync(manifestPath, outputPath)
+func generate(manifestPaths []string, outputPath string) {
+	files, ch := generator.GenerateSiteAsync(manifestPaths, outputPath)
 
 	filesStatuses := make(map[string]generator.FileStatus)
 	fileNames := make([]string, len(files))
@@ -85,15 +85,15 @@ func generate(manifestPath, outputPath string) {
 	}
 }
 
-func Generate(manifestPath, outputPath string, watchMode bool) {
-	generate(manifestPath, outputPath)
+func Generate(manifestPaths []string, outputPath string, watchMode bool) {
+	generate(manifestPaths, outputPath)
 
 	if watchMode {
 		// TODO - See how to find this directory from posts.yaml
 		go watcher.WatchDir("./blog", func(file string) {
 			// TODO - Optimize and generate only the changed file
 			//fmt.Println(("Generating site..."))
-			generate(manifestPath, outputPath)
+			generate(manifestPaths, outputPath)
 
 		})
 
@@ -103,8 +103,8 @@ func Generate(manifestPath, outputPath string, watchMode bool) {
 	}
 }
 
-func SilentGenerate(manifestPath, outputPath string) {
-	files, ch := generator.GenerateSiteAsync(manifestPath, outputPath)
+func SilentGenerate(manifestPaths []string, outputPath string) {
+	files, ch := generator.GenerateSiteAsync(manifestPaths, outputPath)
 
 	completed := 0
 

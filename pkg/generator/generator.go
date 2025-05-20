@@ -22,10 +22,12 @@ type FileProgress struct {
 	Status   FileStatus
 }
 
-func GenerateSiteAsync(manifestPath, outputDir string) ([]FileProgress, <-chan FileProgress) {
+func GenerateSiteAsync(manifestPaths []string, outputDir string) ([]FileProgress, <-chan FileProgress) {
 
-	manifest := getManifest(manifestPath)
-	baseDir := filepath.Dir(manifestPath)
+	manifest := getManifest(manifestPaths)
+
+	// TODO - See this
+	baseDir := filepath.Dir(manifestPaths[0])
 
 	fmt.Println("Generating site...", manifest)
 	progressCh := make(chan FileProgress)

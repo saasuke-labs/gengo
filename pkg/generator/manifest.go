@@ -43,7 +43,72 @@ type ManifestFile struct {
 	StaticAssets           []StaticAsset      `yaml:"static-assets"`
 }
 
-func getManifest(manifestPath string) ManifestFile {
+func mergeManifest(manifest1, manifest2 ManifestFile) ManifestFile {
+	// Merge the two manifests
+	merged := manifest1
+
+	if manifest2.Title != "" {
+		merged.Title = manifest2.Title
+	}
+
+	if manifest2.DefaultLayoutTemplate != "" {
+		merged.DefaultLayoutTemplate = manifest2.DefaultLayoutTemplate
+	}
+
+	if manifest2.DefaultPageTemplate != "" {
+		merged.DefaultPageTemplate = manifest2.DefaultPageTemplate
+	}
+	if manifest2.DefaultSectionTemplate != "" {
+		merged.DefaultSectionTemplate = manifest2.DefaultSectionTemplate
+	}
+	if manifest2.HomeTemplate != "" {
+		merged.HomeTemplate = manifest2.HomeTemplate
+	}
+
+	if manifest2.Sections != nil {
+		if merged.Sections == nil {
+			merged.Sections = make(map[string]Section)
+		}
+		for sectionName, section := range manifest2.Sections {
+			if _, exists := merged.Sections[sectionName]; !exists {
+				merged.Sections[sectionName] = section
+			}
+		}
+	}
+
+	if manifest2.StaticAssets != nil {
+		if merged.StaticAssets == nil {
+			merged.StaticAssets = make([]StaticAsset, 0)
+		}
+		for _, asset := range manifest2.StaticAssets {
+			// Check if the asset already exists in the merged list
+			exists := false
+			for _, mergedAsset := range merged.StaticAssets {
+				if mergedAsset.Path == asset.Path && mergedAsset.Destination == asset.Destination {
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				merged.StaticAssets = append(merged.StaticAssets, asset)
+			}
+		}
+	}
+
+	return merged
+}
+
+func getManifest(manifestPaths []string) ManifestFile {
+	// Read the manifest files and merge them
+	var mergedManifest ManifestFile = getManifestFile(manifestPaths[0])
+	for _, manifestPath := range manifestPaths[1:] {
+		manifest := getManifestFile(manifestPath)
+		mergedManifest = mergeManifest(mergedManifest, manifest)
+	}
+	return mergedManifest
+}
+
+func getManifestFile(manifestPath string) ManifestFile {
 	log.Printf("Reading manifest file: %s", manifestPath)
 	data, err := os.ReadFile(manifestPath)
 	if err != nil {

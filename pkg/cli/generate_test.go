@@ -44,7 +44,7 @@ func TestGeneration(t *testing.T) {
 	absInput, absOutput, absExpectedOutput := prepareDirectories("simple-blog")
 	os.RemoveAll(absOutput)
 
-	SilentGenerate(path.Join(absInput, "gengo.yaml"), absOutput)
+	SilentGenerate([]string{path.Join(absInput, "gengo.yaml")}, absOutput)
 
 	if _, err := os.Stat(absOutput); os.IsNotExist(err) {
 		t.Fatalf("Output directory was not created: %v", err)
