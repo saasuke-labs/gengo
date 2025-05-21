@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -66,17 +67,31 @@ func scheduleTasks(manifest ManifestFile, baseDir, outDir string) []Task {
 		for _, page := range section.Pages {
 			outputFilename := convertExtension(page.MarkdownPath, ".html")
 			outPath := filepath.Join(sectionBasePath, outputFilename)
+
+			externalDataTasks := []ExternalDataTask{}
+
+			for key, value := range page.ExternalData {
+
+				fmt.Println("\t\tKey: ", key, " Source: ", value.Source, " Url: ", manifest.ExternalData[value.Source].Url)
+
+				externalDataTasks = append(externalDataTasks, ExternalDataTask{
+					Key: key,
+					Url: manifest.ExternalData[value.Source].Url,
+				})
+			}
+
 			tasks = append(tasks, PageTask{
-				Title:          manifest.Title,
-				InputFile:      path.Join(baseDir, page.MarkdownPath),
-				OutputFile:     outPath,
-				Url:            filepath.Join("/", sectionName, outputFilename),
-				Template:       path.Join(baseDir, manifest.DefaultPageTemplate),
-				LayoutTemplate: path.Join(baseDir, manifest.DefaultLayoutTemplate),
-				Metadata:       page.Metadata,
-				Tags:           page.Tags,
-				Section:        sectionName,
-				Sections:       sections,
+				Title:             manifest.Title,
+				InputFile:         path.Join(baseDir, page.MarkdownPath),
+				OutputFile:        outPath,
+				Url:               filepath.Join("/", sectionName, outputFilename),
+				Template:          path.Join(baseDir, manifest.DefaultPageTemplate),
+				LayoutTemplate:    path.Join(baseDir, manifest.DefaultLayoutTemplate),
+				Metadata:          page.Metadata,
+				Tags:              page.Tags,
+				Section:           sectionName,
+				Sections:          sections,
+				ExternalDataTasks: externalDataTasks,
 			})
 
 			for _, tag := range page.Tags {

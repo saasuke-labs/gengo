@@ -7,6 +7,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type ExternalDataValue struct {
+	Source string `yaml:"source"`
+}
+
 type Page struct {
 	Title        string            `yaml:"title"`
 	Description  string            `yaml:"description"`
@@ -16,6 +20,7 @@ type Page struct {
 	Tags         []string          `yaml:"tags"`
 	Metadata     map[string]string `yaml:"metadata"`
 	Section      string
+	ExternalData map[string]ExternalDataValue `yaml:"external-data"`
 }
 
 func (p *Page) OutFileName() string {
@@ -33,14 +38,19 @@ type StaticAsset struct {
 	Destination string `yaml:"destination"`
 }
 
+type ExternalApi struct {
+	Url string `yaml:"url"`
+}
+
 type ManifestFile struct {
-	Title                  string             `yaml:"title"`
-	DefaultLayoutTemplate  string             `yaml:"default-layout-template"`
-	DefaultPageTemplate    string             `yaml:"default-page-template"`
-	DefaultSectionTemplate string             `yaml:"default-section-template"`
-	HomeTemplate           string             `yaml:"home-template"`
-	Sections               map[string]Section `yaml:"sections"`
-	StaticAssets           []StaticAsset      `yaml:"static-assets"`
+	Title                  string                 `yaml:"title"`
+	DefaultLayoutTemplate  string                 `yaml:"default-layout-template"`
+	DefaultPageTemplate    string                 `yaml:"default-page-template"`
+	DefaultSectionTemplate string                 `yaml:"default-section-template"`
+	HomeTemplate           string                 `yaml:"home-template"`
+	Sections               map[string]Section     `yaml:"sections"`
+	StaticAssets           []StaticAsset          `yaml:"static-assets"`
+	ExternalData           map[string]ExternalApi `yaml:"external-data"`
 }
 
 func mergeManifest(manifest1, manifest2 ManifestFile) ManifestFile {
