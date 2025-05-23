@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gengo – Static Site Generator</title>
+    <script>
+      function toggleDarkMode() {
+        document.documentElement.classList.toggle("dark");
+      }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans transition-colors duration-300">
+
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow">
+      <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+          <img src="../static/logo.png" alt="Saasuke-Labs Logo" class="h-10 w-auto" />
+          <span class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">Gengo</span>
+        </div>
+        <nav class="flex items-center space-x-4">
+          <a href="#features" class="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">Features</a>
+          <a href="https://github.com/saasuke-labs/gengo" class="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">GitHub</a>
+          <button onclick="toggleDarkMode()" class="text-sm px-3 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+            Toggle Dark Mode
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <main class="flex flex-col items-center justify-center text-center px-6 py-24 font-mono">
+      <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white mb-6 tracking-tight">
+        Gengo
+      </h1>
+      <p class="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-xl">
+        A developer-friendly static site generator that embraces simplicity, clarity, and speed.
+      </p>
+      <code class="bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded text-sm text-indigo-600 dark:text-indigo-400">
+        $ gengo build
+      </code>
+    </main>
+
+    <!-- Features -->
+    <section id="features" class="bg-gray-100 dark:bg-gray-800 py-20 px-6">
+      <div class="max-w-4xl mx-auto text-left font-mono">
+        <h2 class="text-3xl font-bold text-center mb-12 text-gray-900 dark:text-white">Why Gengo?</h2>
+        <ul class="space-y-8">
+          <li class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow">
+            <h3 class="text-xl font-semibold text-indigo-600 dark:text-indigo-400 mb-2">Minimal Setup</h3>
+            <p class="text-gray-700 dark:text-gray-300">Start with one command. Gengo doesn’t ask questions — it just builds.</p>
+          </li>
+          <li class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow">
+            <h3 class="text-xl font-semibold text-indigo-600 dark:text-indigo-400 mb-2">Fast, Pure Go</h3>
+            <p class="text-gray-700 dark:text-gray-300">No Node, no baggage. Just raw speed with native Go performance.</p>
+          </li>
+          <li class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow">
+            <h3 class="text-xl font-semibold text-indigo-600 dark:text-indigo-400 mb-2">Smart Defaults</h3>
+            <p class="text-gray-700 dark:text-gray-300">No config needed — but easily customizable when you're ready.</p>
+          </li>
+          <li class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow">
+            <h3 class="text-xl font-semibold text-indigo-600 dark:text-indigo-400 mb-2">Made for Devs</h3>
+            <pre class="bg-gray-100 dark:bg-gray-800 p-4 rounded text-sm overflow-x-auto"><code>$ gengo init
+$ gengo generate
+$ gengo serve</code></pre>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-900 text-center text-sm text-gray-500 dark:text-gray-400 py-6">
+      Built by <a href="https://saasuke-labs.github.io" class="text-indigo-600 dark:text-indigo-400 hover:underline">Saasuke-Labs</a> – © 2025
+    </footer>
+  </body>
+</html>
