@@ -1,0 +1,17 @@
+title: Gengo
+default-layout-template: "layouts/layout.html"
+default-page-template: "layouts/page.html"
+default-section-template: "layouts/section.html"
+home-template: "layouts/home.html"
+
+static-assets:
+  - path: static
+    destination: static
+
+sections:
+  generate:
+    pages:
+      - markdown-path: commands/generate/usage.md
+  serve:
+    pages:
+      - markdown-path: commands/serve/usage.md

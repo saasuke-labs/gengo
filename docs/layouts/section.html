@@ -1,0 +1,14 @@
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+  {{ range $i, $page := .Pages }} {{ $isMain := eq $i 0 }} {{ $laastEditedAt :=
+  index $page.Metadata "last-edited-at"}}
+  <div
+    class="{{ if $isMain }}md:col-span-2 {{ end }} bg-white rounded-lg shadow overflow-hidden hover:scale-105 transition"
+  >
+    <div class="p-4">
+      <h2 class="text-xl font-semibold mb-2">
+        <a href="/{{$.Section}}/{{$page.OutFileName}}">{{$page.Title }}</a>
+      </h2>
+    </div>
+  </div>
+  {{ end }}
+</div>

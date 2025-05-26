@@ -39,6 +39,7 @@ func scheduleTasks(manifest ManifestFile, baseDir, outDir string) []Task {
 			OutputFile:     homePath,
 			Template:       path.Join(baseDir, manifest.HomeTemplate),
 			LayoutTemplate: path.Join(baseDir, manifest.DefaultLayoutTemplate),
+			Metadata:       manifest.Metadata,
 		})
 	}
 
@@ -61,6 +62,7 @@ func scheduleTasks(manifest ManifestFile, baseDir, outDir string) []Task {
 				Template:       path.Join(baseDir, manifest.DefaultSectionTemplate),
 				LayoutTemplate: path.Join(baseDir, manifest.DefaultLayoutTemplate),
 				Pages:          section.Pages,
+				Metadata:       merge(manifest.Metadata, section.Metadata),
 			})
 		}
 
@@ -87,7 +89,7 @@ func scheduleTasks(manifest ManifestFile, baseDir, outDir string) []Task {
 				Url:               filepath.Join("/", sectionName, outputFilename),
 				Template:          path.Join(baseDir, manifest.DefaultPageTemplate),
 				LayoutTemplate:    path.Join(baseDir, manifest.DefaultLayoutTemplate),
-				Metadata:          page.Metadata,
+				Metadata:          merge(manifest.Metadata, page.Metadata),
 				Tags:              page.Tags,
 				Section:           sectionName,
 				Sections:          sections,
@@ -117,6 +119,7 @@ func scheduleTasks(manifest ManifestFile, baseDir, outDir string) []Task {
 				Pages:          pages,
 				Section:        sectionName,
 				Sections:       sections,
+				Metadata:       merge(manifest.Metadata, section.Metadata),
 			})
 
 		}

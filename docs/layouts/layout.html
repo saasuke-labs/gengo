@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <link href="/static/styles.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>{{ .Title }}</title>
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-Z67DVHFVCM"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-Z67DVHFVCM", { page_path: window.location.pathname });
+    </script>
+  </head>
+  <body>
+    <header>
+      <div>
+        <!-- TODO - See why text wrapps up-->
+        <h2 style="width: 12rem; text-align: left">
+          <!-- We do not have a proper Home page yet, so we point to blog -->
+          <a color="inherit" href="/">{{.Title}}</a>
+        </h2>
+        <ul class="flex space-x-4">
+          {{range $section := .Sections }}
+          <li{{
+            if
+            eq
+            $section
+            $.Section
+            }}class="active"
+            {{
+            end
+            }}
+          >
+            <a href="/{{$section}}" color="inherit">{{$section}}</a>
+          </li>
+          {{ end}}
+        </div>
+      </div>
+    </header>
+
+    <div class="container mx-auto px-4 pt-8">{{ .HTML }}</div>
+
+    <footer>
+      <div>
+        <p>&copy; 2025 {{.Title}}. All rights reserved.</p>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -28,9 +28,10 @@ func (p *Page) OutFileName() string {
 }
 
 type Section struct {
-	Template     string `yaml:"template"`
-	PageTemplate string `yaml:"page-template"`
-	Pages        []Page `yaml:"pages"`
+	Template     string            `yaml:"template"`
+	PageTemplate string            `yaml:"page-template"`
+	Pages        []Page            `yaml:"pages"`
+	Metadata     map[string]string `yaml:"metadata"`
 }
 
 type StaticAsset struct {
@@ -47,6 +48,7 @@ type ManifestFile struct {
 	DefaultLayoutTemplate  string                 `yaml:"default-layout-template"`
 	DefaultPageTemplate    string                 `yaml:"default-page-template"`
 	DefaultSectionTemplate string                 `yaml:"default-section-template"`
+	Metadata               map[string]string      `yaml:"metadata"`
 	HomeTemplate           string                 `yaml:"home-template"`
 	Sections               map[string]Section     `yaml:"sections"`
 	StaticAssets           []StaticAsset          `yaml:"static-assets"`
@@ -60,6 +62,8 @@ func mergeManifest(manifest1, manifest2 ManifestFile) ManifestFile {
 	if manifest2.Title != "" {
 		merged.Title = manifest2.Title
 	}
+
+	merged.Metadata = merge(manifest1.Metadata, manifest2.Metadata)
 
 	if manifest2.DefaultLayoutTemplate != "" {
 		merged.DefaultLayoutTemplate = manifest2.DefaultLayoutTemplate

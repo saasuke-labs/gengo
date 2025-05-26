@@ -13,12 +13,13 @@ type SectionTask struct {
 	Template       string
 	LayoutTemplate string
 	Pages          []Page
+	Metadata       map[string]string
 }
 
 type SectionData struct {
-	Section string
-
-	Pages []Page
+	Section  string
+	Metadata map[string]string
+	Pages    []Page
 }
 
 func (t SectionTask) Execute() error {
@@ -35,6 +36,7 @@ func (t SectionTask) Execute() error {
 		HTML:     template.HTML(html.String()),
 		Section:  t.Section,
 		Sections: t.Sections,
+		Metadata: t.Metadata,
 	})
 
 	savePage(html2, t.OutputFile)

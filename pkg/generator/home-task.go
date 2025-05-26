@@ -14,6 +14,7 @@ type HomeTask struct {
 	OutputFile     string
 	Template       string
 	LayoutTemplate string
+	Metadata       map[string]string
 }
 
 func (t HomeTask) Execute() error {
@@ -28,6 +29,7 @@ func (t HomeTask) Execute() error {
 		HTML:     template.HTML(html.String()),
 		Sections: t.Sections,
 		Section:  "",
+		Metadata: t.Metadata,
 	})
 
 	savePage(html2, t.OutputFile)
