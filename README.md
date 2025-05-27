@@ -63,5 +63,5 @@ go build -o gengo ./cmd/main.go
 
 ## Contributing
 
-Let me know if you'd like to tailor this for your actual GitHub username/repo or add advanced examples (e.g., plugins, themes, rendering hooks).
-
+Contributions are not accepted yet. Once the project stabilizes I will consider it. 
+Thanks for your understanding.
