@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 )
 
 // TODO - For now we assume all data is HTTP API, with GET method, etc
@@ -77,9 +79,31 @@ func fetchData(url string) (interface{}, error) {
 	return template.HTML(string(data)), nil
 }
 
+func getHtmlFromFile(filePath string) template.HTML {
+	if filePath == "" {
+		return template.HTML("")
+	}
+
+	extension := filepath.Ext(filePath)
+
+	if extension == ".html" {
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			panic(fmt.Sprintf("Error reading file %s: %v", filePath, err))
+		}
+		return template.HTML(data)
+	}
+
+	if extension == ".md" {
+		// TODO - Use the markdown parser to convert the markdown to HTML
+		return generateMarkdownPage(filePath)
+	}
+
+	panic(fmt.Sprintf("Unsupported file type %s for file %s", extension, filePath))
+}
 func (t PageTask) Execute() error {
 
-	html := generateMarkdownPage(t.InputFile)
+	html := getHtmlFromFile(t.InputFile)
 
 	externalData := make(map[string]interface{})
 
@@ -97,14 +121,17 @@ func (t PageTask) Execute() error {
 
 	fmt.Println("External Data: ", externalData)
 
-	html = applyTemplate(t.Template, PageData{
-		// See how to get the title from the HTML
-		Title:        "",
-		Tags:         t.Tags,
-		Metadata:     t.Metadata,
-		HTML:         html,
-		ExternalData: externalData,
-	})
+	fmt.Println("Page Template: ", t.Template)
+	if t.Template != "" {
+		html = applyTemplate(t.Template, PageData{
+			// See how to get the title from the HTML
+			Title:        "",
+			Tags:         t.Tags,
+			Metadata:     t.Metadata,
+			HTML:         html,
+			ExternalData: externalData,
+		})
+	}
 	html = applyTemplate(t.LayoutTemplate, PageData{
 		Title:    t.Title,
 		Tags:     t.Tags,
