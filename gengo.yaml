@@ -1,0 +1,10 @@
+title: Test Site
+layout: page.html
+sections:
+  test:
+    title: Test Section
+    layout: section.html
+    posts:
+      - title: Test Post with Nagare
+        file: test-nagare.md
+        layout: page.html

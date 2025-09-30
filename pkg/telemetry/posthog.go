@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/hex"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -24,23 +23,8 @@ var client posthog.Client
 var distinctID string
 
 func init() {
-	if os.Getenv(envDisableKey) == "off" {
-		log.Println("[telemetry] disabled via env var")
-		return
-	}
-
-	var err error
-	client, err = posthog.NewWithConfig(projectKey, posthog.Config{
-		Endpoint:  "https://eu.i.posthog.com",
-		BatchSize: 5,
-		Interval:  5 * time.Second,
-	})
-	if err != nil {
-		log.Println("[telemetry] failed to init:", err)
-		return
-	}
-
-	distinctID, _ = getOrCreateDistinctID()
+	// Disable telemetry entirely for now to prevent hanging issues
+	// TODO: Re-enable with proper timeout handling
 }
 
 // getOrCreateDistinctID stores a persistent UUID in the user's config dir

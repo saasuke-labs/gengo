@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/saasuke-labs/gengo/pkg/nagare"
 	"github.com/yuin/goldmark"
 	highlighting "github.com/yuin/goldmark-highlighting"
 	"github.com/yuin/goldmark/ast"
@@ -23,14 +24,29 @@ type HtmlPage struct {
 var md goldmark.Markdown
 
 func init() {
-	md = goldmark.New(
-		goldmark.WithExtensions(extension.GFM, highlighting.NewHighlighting(
+	// Configure extensions
+	extensions := []goldmark.Extender{
+		extension.GFM,
+		highlighting.NewHighlighting(
 			// highlighting.WithFormatOptions(
 			// 	htmlchroma.WithLineNumbers(true),
 			// ),
 			highlighting.WithStyle("github"), // choose a theme
 			highlighting.WithGuessLanguage(false),
-		)),
+		),
+	}
+
+	// Only add nagare extension if not explicitly disabled
+	//if os.Getenv("NAGARE_DISABLE") != "true" {
+	nagareServiceURL := os.Getenv("NAGARE_SERVICE_URL")
+	if nagareServiceURL == "" {
+		nagareServiceURL = "http://localhost:8080/render"
+	}
+	extensions = append(extensions, nagare.NewNagareExtension(nagareServiceURL))
+	//}
+
+	md = goldmark.New(
+		goldmark.WithExtensions(extensions...),
 		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
 		goldmark.WithRendererOptions(html.WithHardWraps(), html.WithXHTML()),
 	)
