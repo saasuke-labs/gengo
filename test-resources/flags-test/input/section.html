@@ -1,0 +1,19 @@
+<h1>All Pages</h1>
+{{ range .Pages }}
+<div>{{ .Title }}</div>
+{{ end }}
+
+<h1>Pinned Pages (not archived)</h1>
+{{ range .Pages | where "pinned,!archived" }}
+<div>{{ .Title }}</div>
+{{ end }}
+
+<h1>Not Pinned, Not Archived</h1>
+{{ range .Pages | where "!pinned,!archived" }}
+<div>{{ .Title }}</div>
+{{ end }}
+
+<h1>Featured Pages</h1>
+{{ range .Pages | where "featured" }}
+<div>{{ .Title }}</div>
+{{ end }}

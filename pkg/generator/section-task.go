@@ -3,6 +3,7 @@ package generator
 import (
 	"bytes"
 	"html/template"
+	"path/filepath"
 )
 
 type SectionTask struct {
@@ -24,9 +25,12 @@ type SectionData struct {
 
 func (t SectionTask) Execute() error {
 	html := bytes.NewBufferString("")
-	tmpl := template.Must(template.New("section").Funcs(template.FuncMap{
+	
+	funcMap := template.FuncMap{
 		"where": wherePages,
-	}).ParseFiles(t.Template))
+	}
+	
+	tmpl := template.Must(template.New(filepath.Base(t.Template)).Funcs(funcMap).ParseFiles(t.Template))
 
 	tmpl.Execute(html, SectionData{
 		Section: t.Section,
