@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func fileHandler(sitePath string, watchMode bool) http.Handler {
+func fileHandler(sitePath string, watchMode bool, port int) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := filepath.Join(sitePath, r.URL.Path)
 		info, err := os.Stat(path)
@@ -33,12 +33,13 @@ func fileHandler(sitePath string, watchMode bool) http.Handler {
 			}
 			// Inject the WebSocket script before closing </body>
 			html := string(content)
-			injected := strings.Replace(html, "</body>", `
+			wsScript := fmt.Sprintf(`
 				<script>
-					const ws = new WebSocket("ws://localhost:3000/ws");
+					const ws = new WebSocket("ws://localhost:%d/ws");
 					ws.onmessage = () => window.location.reload();
 				</script>
-			</body>`, 1)
+			</body>`, port)
+			injected := strings.Replace(html, "</body>", wsScript, 1)
 			w.Header().Set("Content-Type", "text/html")
 			w.Write([]byte(injected))
 		} else {
@@ -84,7 +85,7 @@ func notifyClients(filePath string) {
 func Serve(sitePath string, watchMode bool, port int) {
 	fmt.Println("Serving site at", sitePath, "from http://localhost:", port)
 
-	http.Handle("/", fileHandler(sitePath, watchMode))
+	http.Handle("/", fileHandler(sitePath, watchMode, port))
 	if watchMode {
 		http.HandleFunc("/ws", wsHandler)
 		go watcher.WatchDir(sitePath, notifyClients)
