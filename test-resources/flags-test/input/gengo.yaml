@@ -1,0 +1,22 @@
+default-layout-template: "layout.html"
+default-page-template: "page.html"
+default-section-template: "section.html"
+
+sections:
+  blog:
+    pages:
+      - title: "Pinned Post"
+        markdown-path: pinned.md
+        flags:
+          - pinned
+      - title: "Archived Post"
+        markdown-path: archived.md
+        flags:
+          - archived
+      - title: "Pinned and Featured Post"
+        markdown-path: featured.md
+        flags:
+          - pinned
+          - featured
+      - title: "Normal Post"
+        markdown-path: normal.md
