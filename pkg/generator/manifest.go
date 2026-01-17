@@ -18,6 +18,7 @@ type Page struct {
 	PublishedAt  string            `yaml:"published-at"`
 	LastEditedAt string            `yaml:"last-edited-at"`
 	Tags         []string          `yaml:"tags"`
+	Flags        []string          `yaml:"flags"`
 	Metadata     map[string]string `yaml:"metadata"`
 	Section      string
 	ExternalData map[string]ExternalDataValue `yaml:"external-data"`

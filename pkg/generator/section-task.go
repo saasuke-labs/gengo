@@ -24,7 +24,9 @@ type SectionData struct {
 
 func (t SectionTask) Execute() error {
 	html := bytes.NewBufferString("")
-	tmpl := template.Must(template.ParseFiles(t.Template))
+	tmpl := template.Must(template.New("section").Funcs(template.FuncMap{
+		"where": wherePages,
+	}).ParseFiles(t.Template))
 
 	tmpl.Execute(html, SectionData{
 		Section: t.Section,
