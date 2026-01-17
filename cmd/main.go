@@ -18,6 +18,7 @@ func init() {
 
 	var sitePath string
 	var watchMode bool
+	var port int
 
 	rootCmd = cobra.Command{
 		Use:   "gengo",
@@ -32,14 +33,13 @@ func init() {
 		Short: "Serves the static site",
 		Long:  `Serves the static site.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			// This function will be executed when the "subcommand" is called
-			//TODO -  Get port from flags
-			execServeSite(sitePath, watchMode, 3000)
+			execServeSite(sitePath, watchMode, port)
 		},
 	}
 
 	serveCmd.Flags().StringVar(&sitePath, "site", "site", "Site directory")
 	serveCmd.Flags().BoolVar(&watchMode, "watch", false, "Enable watch mode with hot reload")
+	serveCmd.Flags().IntVar(&port, "port", 3000, "Port to serve on")
 
 	rootCmd.AddCommand(cli.NewGenerateCommand())
 	rootCmd.AddCommand(serveCmd)
