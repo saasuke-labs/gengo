@@ -4,8 +4,6 @@ builds:
     main: ./cmd/main.go
     env:
       - CGO_ENABLED=1
-    flags:
-      - -tags=netgo
     goos:
       - linux
       - darwin
