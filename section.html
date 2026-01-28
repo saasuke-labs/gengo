@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{.Title}}</title>
+  </head>
+  <body>
+    <h1>{{.Title}}</h1>
+    {{range .Posts}}
+    <div><a href="{{.URL}}">{{.Title}}</a></div>
+    {{end}}
+  </body>
+</html>

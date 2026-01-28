@@ -34,16 +34,8 @@ func init() {
 			highlighting.WithStyle("github"), // choose a theme
 			highlighting.WithGuessLanguage(false),
 		),
+		nagare.NewNagareExtension(),
 	}
-
-	// Only add nagare extension if not explicitly disabled
-	//if os.Getenv("NAGARE_DISABLE") != "true" {
-	nagareServiceURL := os.Getenv("NAGARE_SERVICE_URL")
-	if nagareServiceURL == "" {
-		nagareServiceURL = "http://localhost:8080/render"
-	}
-	extensions = append(extensions, nagare.NewNagareExtension(nagareServiceURL))
-	//}
 
 	md = goldmark.New(
 		goldmark.WithExtensions(extensions...),

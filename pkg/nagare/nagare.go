@@ -2,12 +2,8 @@ package nagare
 
 import (
 	"bytes"
-	"context"
-	"fmt"
-	"io"
-	"net/http"
-	"time"
 
+	nagarediagram "github.com/saasuke-labs/nagare/pkg/diagram"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
@@ -83,9 +79,8 @@ func (t *NagareTransformer) Transform(node *ast.Document, reader text.Reader, pc
 	}
 }
 
-// NagareRenderer renders nagare code blocks by calling the HTTP service
+// NagareRenderer renders nagare code blocks using the nagare library
 type NagareRenderer struct {
-	ServiceURL string
 }
 
 // RegisterFuncs implements renderer.NodeRenderer.RegisterFuncs
@@ -100,8 +95,8 @@ func (r *NagareRenderer) renderNagareCodeBlock(w util.BufWriter, source []byte, 
 
 	nagareBlock := node.(*NagareCodeBlock)
 
-	// Call the HTTP service
-	htmlContent, err := r.callNagareService(nagareBlock.Content)
+	// Use the nagare library directly to render the diagram
+	svg, err := nagarediagram.CreateDiagram(string(nagareBlock.Content))
 	if err != nil {
 		// Fallback: render as regular code block with error message
 		w.WriteString("<div class=\"nagare-error\">")
@@ -115,56 +110,14 @@ func (r *NagareRenderer) renderNagareCodeBlock(w util.BufWriter, source []byte, 
 		return ast.WalkContinue, nil
 	}
 
-	// Write the HTML response directly
-	w.WriteString(htmlContent)
+	// Write the SVG directly
+	w.WriteString(svg)
 
 	return ast.WalkContinue, nil
 }
 
-func (r *NagareRenderer) callNagareService(content []byte) (string, error) {
-	// Create HTTP client with timeout
-	client := &http.Client{
-		Timeout: 5 * time.Second, // 5 second timeout
-	}
-
-	// Create request with context
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, "POST", r.ServiceURL, bytes.NewReader(content))
-	if err != nil {
-		return "", fmt.Errorf("failed to create nagare request: %w", err)
-	}
-	req.Header.Set("Content-Type", "text/plain")
-
-	// Make the request
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("failed to call nagare service: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// Read response body (for both success and error cases)
-	responseBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("failed to read response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		// Include the error message from the response body
-		errorMsg := string(responseBytes)
-		if errorMsg == "" {
-			errorMsg = "no error details provided"
-		}
-		return "", fmt.Errorf("nagare service returned status %d: %s", resp.StatusCode, errorMsg)
-	}
-
-	return string(responseBytes), nil
-}
-
 // Extension represents the nagare extension
 type Extension struct {
-	ServiceURL string
 }
 
 // Extend implements goldmark.Extender.Extend
@@ -173,11 +126,11 @@ func (e *Extension) Extend(m goldmark.Markdown) {
 		util.Prioritized(&NagareTransformer{}, 999),
 	))
 	m.Renderer().AddOptions(renderer.WithNodeRenderers(
-		util.Prioritized(&NagareRenderer{ServiceURL: e.ServiceURL}, 999),
+		util.Prioritized(&NagareRenderer{}, 999),
 	))
 }
 
 // NewNagareExtension creates a new nagare extension
-func NewNagareExtension(serviceURL string) *Extension {
-	return &Extension{ServiceURL: serviceURL}
+func NewNagareExtension() *Extension {
+	return &Extension{}
 }
