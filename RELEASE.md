@@ -1,57 +1,71 @@
-# Release Process for Version 0.0.8
+# Release Process for Version 0.0.9
 
-This document explains how to complete the release of version 0.0.8.
+This document explains how to complete the release of version 0.0.9 after fixing the CI build error.
 
-## Current Status
+## Background
 
-- ✅ CHANGELOG.md has been created documenting version 0.0.8
-- ✅ Local annotated tag `v0.0.8` has been created
-- ⏳ Tag needs to be pushed by a maintainer with appropriate permissions
+The initial v0.0.9 release failed in CI due to a build error. The issue was:
+- GoReleaser was configured with `CGO_ENABLED=0`
+- The dependency `github.com/chai2010/webp` (from `github.com/saasuke-labs/nagare@v0.0.8`) requires CGO for C code compilation
+- This caused build failures on darwin_arm64 and other platforms with error: "undefined: webpGetInfo"
+
+## Fixes Applied
+
+The following changes were made to fix the build:
+- ✅ Changed `CGO_ENABLED=0` to `CGO_ENABLED=1` in goreleaser.yaml
+- ✅ Removed `-tags=netgo` flag (redundant with CGO enabled)
+- ✅ Updated `.github/workflows/release.yaml` to use `goreleaser-cross:v1.24` container with cross-compilation toolchains
 
 ## Completing the Release
 
-The tag `v0.0.8` has been created locally but cannot be pushed due to repository protection rules that restrict tag creation. To complete the release, a maintainer with appropriate permissions should:
+After merging the PR with the fixes to main, recreate the v0.0.9 tag:
 
-### Option 1: Create Tag via GitHub Web Interface
-
-1. Go to https://github.com/saasuke-labs/gengo/releases/new
-2. Click "Choose a tag"
-3. Type `v0.0.8` and select "Create new tag: v0.0.8 on publish"
-4. Set the target to the branch `copilot/release-gengo-version-008` (or `main` after merging)
-5. Set the release title to "Release 0.0.8"
-6. Copy the content from CHANGELOG.md for version 0.0.8 into the release description
-7. Click "Publish release"
-
-### Option 2: Create Tag via Git (requires permissions)
+### Steps to Recreate v0.0.9 Tag
 
 ```bash
-# Ensure you're on the correct branch
-git checkout copilot/release-gengo-version-008  # or main after merging
+# 1. Checkout main branch and pull latest changes
+git checkout main
+git pull origin main
 
-# Pull the latest changes
-git pull
+# 2. Delete the old v0.0.9 tag locally and remotely
+git tag -d v0.0.9
+git push origin :refs/tags/v0.0.9
 
-# Create and push the annotated tag
-git tag -a v0.0.8 -m "Release version 0.0.8"
-git push origin v0.0.8
+# 3. Create new v0.0.9 tag on the fixed commit
+git tag v0.0.9
+
+# 4. Push the new tag to trigger the release workflow
+git push origin v0.0.9
 ```
 
-### Option 3: Create Tag via GitHub CLI (requires permissions)
+### Alternative: Create Tag via GitHub Web Interface
 
-```bash
-gh release create v0.0.8 --title "Release 0.0.8" --notes-file CHANGELOG.md --target copilot/release-gengo-version-008
-```
+1. Go to https://github.com/saasuke-labs/gengo/releases
+2. Delete the existing v0.0.9 release and tag
+3. Go to https://github.com/saasuke-labs/gengo/releases/new
+4. Click "Choose a tag"
+5. Type `v0.0.9` and select "Create new tag: v0.0.9 on publish"
+6. Set the target to `main` (with the fixes merged)
+7. Set the release title to "Release 0.0.9"
+8. Click "Publish release"
 
 ## What Happens Next
 
-Once the tag is pushed:
+Once the new tag is pushed:
 
 1. GitHub Actions will detect the new tag matching pattern `v*.*.*`
 2. The release workflow (`.github/workflows/release.yaml`) will trigger
-3. GoReleaser will build binaries for multiple platforms (Linux, macOS, Windows)
-4. Release artifacts will be uploaded to GitHub Releases
-5. Checksums will be generated for verification
+3. The workflow will use the `goreleaser-cross:v1.24` container with all cross-compilation tools
+4. GoReleaser will build binaries for multiple platforms with CGO enabled:
+   - Linux (amd64, arm64)
+   - macOS (amd64, arm64)
+   - Windows (amd64, arm64)
+5. Release artifacts will be uploaded to GitHub Releases
+6. Checksums will be generated for verification
 
-## Repository Protection Rules
+## Verification
 
-The repository has protection rules that prevent direct tag creation via git push. This is a security measure to ensure releases are controlled and authorized. Tags that trigger releases should only be created by maintainers with appropriate permissions.
+After the workflow completes successfully, verify:
+- All platform binaries are built without CGO errors
+- Release assets are uploaded to https://github.com/saasuke-labs/gengo/releases/tag/v0.0.9
+- No build errors related to `webpGetInfo` or other CGO issues
