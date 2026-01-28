@@ -17,8 +17,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-replace github.com/saasuke-labs/nagare v0.0.8 => ../nagare
-
 require (
 	github.com/alecthomas/chroma v0.10.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
