@@ -11,14 +11,11 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    container:
+      image: goreleaser/goreleaser-cross:v1.24
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.24"
 
       - name: Import GPG key (optional)
         if: env.GPG_PRIVATE_KEY != ''
@@ -28,9 +25,6 @@ jobs:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v5
-        with:
-          version: latest
-          args: release --clean
+        run: goreleaser release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

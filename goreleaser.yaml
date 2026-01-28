@@ -3,9 +3,7 @@ builds:
   - id: gengo
     main: ./cmd/main.go
     env:
-      - CGO_ENABLED=0
-    flags:
-      - -tags=netgo
+      - CGO_ENABLED=1
     goos:
       - linux
       - darwin
