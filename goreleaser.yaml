@@ -19,6 +19,8 @@ builds:
         env:
           - CGO_ENABLED=1
           - CC=aarch64-linux-gnu-gcc
+      # Darwin (macOS) builds use osxcross compilers from goreleaser-cross container
+      # Available in /usr/local/osxcross/bin: oa64-clang (arm64), o64-clang (amd64)
       - goos: darwin
         goarch: arm64
         env:
