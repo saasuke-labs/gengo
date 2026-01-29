@@ -5,6 +5,7 @@ builds:
     main: ./cmd/main.go
     env:
       - CGO_ENABLED=1
+      - CC=gcc
     goos:
       - linux
       - darwin
@@ -12,12 +13,40 @@ builds:
     goarch:
       - amd64
       - arm64
+    overrides:
+      - goos: linux
+        goarch: arm64
+        env:
+          - CGO_ENABLED=1
+          - CC=aarch64-linux-gnu-gcc
+      - goos: darwin
+        goarch: arm64
+        env:
+          - CGO_ENABLED=1
+          - CC=aarch64-apple-darwin20.2-clang
+      - goos: darwin
+        goarch: amd64
+        env:
+          - CGO_ENABLED=1
+          - CC=x86_64-apple-darwin20.2-clang
+      - goos: windows
+        goarch: amd64
+        env:
+          - CGO_ENABLED=1
+          - CC=x86_64-w64-mingw32-gcc
+      - goos: windows
+        goarch: arm64
+        env:
+          - CGO_ENABLED=1
+          - CC=aarch64-w64-mingw32-gcc
     ldflags:
       - "-X github.com/saasuke-labs/gengo/pkg/version.Version={{.Version}} -X github.com/saasuke-labs/gengo/pkg/version.Commit={{.ShortCommit}} -X github.com/saasuke-labs/gengo/pkg/version.Date={{.Date}} -w -s"
 
 archives:
   - id: archive
-    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
     files:
       - LICENSE
       - README.md
