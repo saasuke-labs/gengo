@@ -7,7 +7,7 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/posthog/posthog-go v1.5.2
-	github.com/saasuke-labs/nagare v0.0.9
+	github.com/saasuke-labs/nagare v0.0.10
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/yuin/goldmark v1.7.10
