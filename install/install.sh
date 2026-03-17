@@ -20,14 +20,21 @@ if [[ "$OS" == "darwin" ]]; then
   CHECKSUM_CMD="shasum -a 256"
 fi
 
-# Get latest release metadata
-echo "Fetching latest Gengo release info..."
-LATEST_JSON=$(curl -s "https://api.github.com/repos/${REPO}/releases/latest")
-TAG=$(echo "$LATEST_JSON" | jq -r .tag_name)
-VERSION="${TAG#v}"
-ASSET_NAME="gengo_${VERSION}_${OS}_${ARCH}.tar.gz"
+# Resolve version (defaults to latest release)
+REQUESTED_VERSION="${VERSION:-latest}"
+if [[ "$REQUESTED_VERSION" == "latest" ]]; then
+  echo "Fetching latest Gengo release info..."
+  RELEASE_JSON=$(curl -s "https://api.github.com/repos/${REPO}/releases/latest")
+  TAG=$(echo "$RELEASE_JSON" | jq -r .tag_name)
+  VERSION="${TAG#v}"
+  echo "Latest version is $VERSION"
+else
+  VERSION="${REQUESTED_VERSION#v}"
+  TAG="v${VERSION}"
+  echo "Using requested version $VERSION"
+fi
 
-echo "Latest version is $VERSION"
+ASSET_NAME="gengo_${VERSION}_${OS}_${ARCH}.tar.gz"
 echo "Target asset: $ASSET_NAME"
 
 # Download assets
