@@ -23,6 +23,12 @@ Or you can use the script to install the latest version:
 curl -fsSL https://raw.githubusercontent.com/saasuke-labs/gengo/main/install/install.sh | bash
 ```
 
+To install a specific version in one line:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/saasuke-labs/gengo/main/install/install.sh | VERSION=0.0.10 bash
+```
+
 ## 🚀 Features
 
 - 🧩 Section-based manifest to organize pages (e.g., `blog`, `projects`)
