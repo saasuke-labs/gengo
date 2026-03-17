@@ -23,6 +23,12 @@ Or you can use the script to install the latest version:
 curl -fsSL https://raw.githubusercontent.com/saasuke-labs/gengo/main/install/install.sh | bash
 ```
 
+To install a specific version in one line:
+
+```sh
+VERSION=0.3.0 && OS=$(uname | tr '[:upper:]' '[:lower:]') && ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/;s/arm64/arm64/') && curl -fsSL "https://github.com/saasuke-labs/gengo/releases/download/v${VERSION}/gengo_${VERSION}_${OS}_${ARCH}.tar.gz" | tar -xz && install -m 755 gengo "$HOME/.local/bin/gengo"
+```
+
 ## 🚀 Features
 
 - 🧩 Section-based manifest to organize pages (e.g., `blog`, `projects`)
