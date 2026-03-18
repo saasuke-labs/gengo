@@ -2,59 +2,57 @@
 
 This extension adds support for `nagare` code blocks in Markdown files. When a fenced code block with the language `nagare` is encountered, the extension will:
 
-1. Extract the nagare code from the code block
-2. Use the nagare library directly to render it as an SVG diagram
-3. Embed the resulting SVG into the HTML output
+1. Extract the Nagare source from the code block
+2. Call Nagare's public `pkg/nagare.RenderToSVG` entry point so both diagrams and charts are rendered through the upstream renderer
+3. Show an inline error message plus the original source block when Nagare returns an error or only produces an empty/background-only SVG
+4. Embed successful SVG output directly into the HTML
 
 ## Usage
 
 In your markdown files, use fenced code blocks with `nagare` as the language:
 
 ````markdown
-# My Document
-
-Here's some nagare code:
+# Diagram Example
 
 ```nagare
-circle(50, 50, 30)
-fill("red")
-text("Hello World", 10, 100)
+@layout(w:500,h:300)
+client:Browser(url: "https://example.com", text: "Web App", x:50,y:100,w:180,h:120)
+server:Server(title: "API Server", icon: "server", port: 8080, x:300,y:100,w:150,h:50)
+client.e --> server.w
 ```
 
-Regular markdown continues here...
+# Chart Example
+
+```nagare
+chart
+title: Test Chart
+xaxis: number
+
+series: test
+color: #ff0000
+data:
+  0: 10
+  1: 20
+  2: 15
+```
 ````
-
-## How it works
-
-The extension uses the [nagare](https://github.com/saasuke-labs/nagare) Go library to convert nagare code into SVG diagrams. This happens during the markdown processing phase, with no external service dependencies.
 
 ## Error Handling
 
-If there's an error rendering the nagare code, the extension will:
+If Nagare cannot render a block cleanly, Gengo renders:
 
-1. Display an error message with details
-2. Fall back to rendering the original nagare code as a regular code block
+1. A visible `nagare-error` message containing the upstream error text when available
+2. The original `nagare` source block so the author can inspect and fix it
 
-Example fallback output:
-
-```html
-<div class="nagare-error">
-  <p><strong>Error processing nagare block:</strong> syntax error on line 2</p>
-</div>
-<pre><code class="language-nagare">
-circle(50, 50, 30)
-fill("red")
-text("Hello World", 10, 100)
-</code></pre>
-```
+That also covers cases where Nagare returns an almost-empty SVG containing only the background rectangle.
 
 ## Implementation Details
 
 The extension works by:
 
-1. Using a Goldmark AST transformer to detect fenced code blocks with language "nagare"
+1. Using a Goldmark AST transformer to detect fenced code blocks with language `nagare`
 2. Converting them to custom `NagareCodeBlock` AST nodes
-3. Using a custom renderer that calls the nagare library directly
-4. Rendering the resulting SVG inline in the HTML
+3. Calling Nagare's public renderer entry point so chart-vs-diagram detection stays aligned with upstream behavior
+4. Rejecting empty/background-only SVG responses before embedding them inline
 
-This approach ensures compatibility with other Goldmark extensions and maintains the performance benefits of AST-based processing.
+This keeps Gengo's integration small while improving chart support and surfacing actionable rendering errors.

@@ -36,6 +36,7 @@ curl -fsSL https://raw.githubusercontent.com/saasuke-labs/gengo/main/install/ins
 - 🖥️ Terminal UI with [Bubble Tea](https://github.com/charmbracelet/bubbletea) & [Charm](https://charm.sh/)
 - 📊 Real-time progress bars and status messages
 - 💻 `--plain` mode for CI-friendly output (e.g., GitHub Actions)
+- 🧭 Nagare Markdown rendering for both diagrams and charts, with inline error output when a Nagare block fails to render cleanly
 - 🔐 Non-commercial license with optional commercial licensing
 
 ---

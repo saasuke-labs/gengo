@@ -2,8 +2,10 @@ package nagare
 
 import (
 	"bytes"
+	"fmt"
+	"strings"
 
-	nagarediagram "github.com/saasuke-labs/nagare/pkg/diagram"
+	nagarelib "github.com/saasuke-labs/nagare/pkg/nagare"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
@@ -41,19 +43,15 @@ func (t *NagareTransformer) Transform(node *ast.Document, reader text.Reader, pc
 		block  *NagareCodeBlock
 	}
 
-	// First pass: collect all nagare blocks
 	ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
 			return ast.WalkContinue, nil
 		}
 
 		if fcb, ok := n.(*ast.FencedCodeBlock); ok {
-			// Check if this is a nagare code block
 			if fcb.Info != nil && bytes.Equal(fcb.Info.Value(reader.Source()), []byte("nagare")) {
-				// Create a new NagareCodeBlock
 				nagareBlock := &NagareCodeBlock{}
 
-				// Copy content from the fenced code block
 				var content bytes.Buffer
 				for i := 0; i < fcb.Lines().Len(); i++ {
 					line := fcb.Lines().At(i)
@@ -61,7 +59,6 @@ func (t *NagareTransformer) Transform(node *ast.Document, reader text.Reader, pc
 				}
 				nagareBlock.Content = content.Bytes()
 
-				// Store for replacement
 				nagareBlocks = append(nagareBlocks, struct {
 					parent ast.Node
 					fcb    *ast.FencedCodeBlock
@@ -73,15 +70,13 @@ func (t *NagareTransformer) Transform(node *ast.Document, reader text.Reader, pc
 		return ast.WalkContinue, nil
 	})
 
-	// Second pass: replace all collected blocks
 	for _, nb := range nagareBlocks {
 		nb.parent.ReplaceChild(nb.parent, nb.fcb, nb.block)
 	}
 }
 
 // NagareRenderer renders nagare code blocks using the nagare library
-type NagareRenderer struct {
-}
+type NagareRenderer struct{}
 
 // RegisterFuncs implements renderer.NodeRenderer.RegisterFuncs
 func (r *NagareRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
@@ -95,10 +90,8 @@ func (r *NagareRenderer) renderNagareCodeBlock(w util.BufWriter, source []byte, 
 
 	nagareBlock := node.(*NagareCodeBlock)
 
-	// Use the nagare library directly to render the diagram
-	svg, err := nagarediagram.CreateDiagram(string(nagareBlock.Content))
+	svg, err := renderNagareSVG(string(nagareBlock.Content))
 	if err != nil {
-		// Fallback: render as regular code block with error message
 		w.WriteString("<div class=\"nagare-error\">")
 		w.WriteString("<p><strong>Error processing nagare block:</strong> ")
 		w.Write(util.EscapeHTML([]byte(err.Error())))
@@ -110,15 +103,40 @@ func (r *NagareRenderer) renderNagareCodeBlock(w util.BufWriter, source []byte, 
 		return ast.WalkContinue, nil
 	}
 
-	// Write the SVG directly
 	w.WriteString(svg)
-
 	return ast.WalkContinue, nil
 }
 
-// Extension represents the nagare extension
-type Extension struct {
+func renderNagareSVG(code string) (string, error) {
+	svg, err := nagarelib.RenderToSVG(code)
+	if err != nil {
+		return "", err
+	}
+	trimmed := strings.TrimSpace(svg)
+	if trimmed == "" {
+		return "", fmt.Errorf("nagare returned an empty SVG")
+	}
+	if isBareBackgroundSVG(trimmed) {
+		return "", fmt.Errorf("nagare rendered only a background; check the block for chart or diagram errors")
+	}
+	return svg, nil
 }
+
+func isBareBackgroundSVG(svg string) bool {
+	if !strings.Contains(svg, "<svg") {
+		return false
+	}
+	graphicTags := []string{"<g", "<circle", "<line", "<polyline", "<path", "<text", "<ellipse", "<polygon"}
+	for _, tag := range graphicTags {
+		if strings.Contains(svg, tag) {
+			return false
+		}
+	}
+	return strings.Count(svg, "<rect") == 1
+}
+
+// Extension represents the nagare extension
+type Extension struct{}
 
 // Extend implements goldmark.Extender.Extend
 func (e *Extension) Extend(m goldmark.Markdown) {
@@ -131,6 +149,4 @@ func (e *Extension) Extend(m goldmark.Markdown) {
 }
 
 // NewNagareExtension creates a new nagare extension
-func NewNagareExtension() *Extension {
-	return &Extension{}
-}
+func NewNagareExtension() *Extension { return &Extension{} }
