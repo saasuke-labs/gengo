@@ -68,6 +68,42 @@ go build -o gengo ./cmd/main.go
 
 ---
 
+## External data sources
+
+Pages can pull data from any HTTP service at build time (a comments service
+such as [Kotomi](https://github.com/saasuke-labs/kotomi), a weather API, your
+own backend). Declare the services once under `sources`, then reference them
+from a page's `data` block, either in the manifest or in the markdown front
+matter:
+
+```yaml
+# gengo.yaml
+sources:
+  comments:
+    # Go template, rendered per page with that page's metadata
+    url: https://comments.example.com/pages/{{ index .Metadata "page-id" }}/comments
+    headers:
+      Accept: application/json
+```
+
+```markdown
+---
+title: Hello
+metadata:
+  page-id: hello-world
+data:
+  comments:
+    source: comments
+---
+This post has {{ len .Data.comments }} comments.
+```
+
+Each entry is available as `.Data.<key>` in the markdown file, the page
+template and the layout template. JSON responses are parsed into structured
+data, `text/html` is inserted as HTML, anything else is a plain string.
+Requests time out after 15 seconds; a failed source logs a warning and leaves
+its key empty instead of failing the build.
+
 ## Contributing
 
 Contributions are not accepted yet. Once the project stabilizes I will consider it. 

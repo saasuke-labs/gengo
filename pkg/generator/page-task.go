@@ -2,6 +2,7 @@ package generator
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -45,6 +46,9 @@ type PageTask struct {
 	DataTasks      []DataTask
 }
 
+// sourceRequestTimeout bounds each source fetch so a slow service cannot hang a build.
+var sourceRequestTimeout = 15 * time.Second
+
 // renderURLTemplate renders a source URL template using the page's metadata context.
 func renderURLTemplate(urlTmpl string, metadata map[string]string) (string, error) {
 	funcMap := ttemplate.FuncMap{
@@ -69,7 +73,10 @@ func fetchSource(task DataTask, metadata map[string]string) (interface{}, error)
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", url, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), sourceRequestTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request for %s: %w", url, err)
 	}
@@ -78,7 +85,7 @@ func fetchSource(task DataTask, metadata map[string]string) (interface{}, error)
 		req.Header.Set(name, value)
 	}
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: sourceRequestTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching %s: %w", url, err)
