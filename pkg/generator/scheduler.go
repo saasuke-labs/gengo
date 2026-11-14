@@ -78,30 +78,33 @@ func scheduleTasks(manifest ManifestFile, baseDir, outDir string) []Task {
 			outputFilename := convertExtension(page.MarkdownPath, ".html")
 			outPath := getFullPath(sectionBasePath, outputFilename)
 
-			externalDataTasks := []ExternalDataTask{}
+			dataTasks := []DataTask{}
 
-			for key, value := range page.ExternalData {
-
-				fmt.Println("\t\tKey: ", key, " Source: ", value.Source, " Url: ", manifest.ExternalData[value.Source].Url)
-
-				externalDataTasks = append(externalDataTasks, ExternalDataTask{
-					Key: key,
-					Url: manifest.ExternalData[value.Source].Url,
+			for key, ref := range page.Data {
+				source, ok := manifest.Sources[ref.Source]
+				if !ok {
+					fmt.Printf("Warning: source '%s' referenced by page '%s' is not defined\n", ref.Source, page.MarkdownPath)
+					continue
+				}
+				dataTasks = append(dataTasks, DataTask{
+					Key:     key,
+					UrlTmpl: source.Url,
+					Headers: source.Headers,
 				})
 			}
 
 			tasks = append(tasks, PageTask{
-				Title:             manifest.Title,
-				InputFile:         getFullPath(baseDir, page.MarkdownPath),
-				OutputFile:        outPath,
-				Url:               filepath.Join("/", sectionName, outputFilename),
-				Template:          getFullPath(baseDir, manifest.DefaultPageTemplate),
-				LayoutTemplate:    getFullPath(baseDir, manifest.DefaultLayoutTemplate),
-				Metadata:          merge(manifest.Metadata, page.Metadata),
-				Tags:              page.Tags,
-				Section:           sectionName,
-				Sections:          sections,
-				ExternalDataTasks: externalDataTasks,
+				Title:          manifest.Title,
+				InputFile:      getFullPath(baseDir, page.MarkdownPath),
+				OutputFile:     outPath,
+				Url:            filepath.Join("/", sectionName, outputFilename),
+				Template:       getFullPath(baseDir, manifest.DefaultPageTemplate),
+				LayoutTemplate: getFullPath(baseDir, manifest.DefaultLayoutTemplate),
+				Metadata:       merge(manifest.Metadata, page.Metadata),
+				Tags:           page.Tags,
+				Section:        sectionName,
+				Sections:       sections,
+				DataTasks:      dataTasks,
 			})
 
 			for _, tag := range page.Tags {

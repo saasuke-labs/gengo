@@ -49,6 +49,10 @@ func MarkdownToHtml(markdownPath string) HtmlPage {
 	if err != nil {
 		log.Fatalf("failed to read %s: %v", markdownPath, err)
 	}
+	return MarkdownBytesToHtml(content)
+}
+
+func MarkdownBytesToHtml(content []byte) HtmlPage {
 	context := parser.NewContext()
 	doc := md.Parser().Parse(text.NewReader(content), parser.WithContext(context))
 
@@ -57,7 +61,6 @@ func MarkdownToHtml(markdownPath string) HtmlPage {
 
 	if h1 != "" {
 		title = h1
-
 	}
 
 	var article bytes.Buffer
