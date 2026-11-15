@@ -1,11 +1,12 @@
 package main
 
 import (
+	"os"
+
 	"github.com/saasuke-labs/gengo/pkg/cli"
 	"github.com/saasuke-labs/gengo/pkg/server"
 
 	"github.com/spf13/cobra"
-	_ "github.com/yuin/goldmark/extension"
 )
 
 var rootCmd cobra.Command
@@ -47,8 +48,9 @@ func init() {
 }
 
 func main() {
-	rootCmd.Execute()
-
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
 }
 
 // func watchAndRebuild(manifestPath, outputPath string) {

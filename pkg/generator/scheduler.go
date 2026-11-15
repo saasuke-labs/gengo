@@ -55,9 +55,13 @@ func scheduleTasks(manifest ManifestFile, baseDir, outDir string) []Task {
 		tags := make(map[string][]Page)
 
 		sectionBasePath := getFullPath(outDir, sectionName)
+		sectionTemplate := section.Template
+		if sectionTemplate == "" {
+			sectionTemplate = manifest.DefaultSectionTemplate
+		}
 
 		// Do not generate the section page if there is no template configured
-		if manifest.DefaultSectionTemplate != "" {
+		if sectionTemplate != "" {
 			os.MkdirAll(sectionBasePath, 0755)
 
 			outFile := getFullPath(sectionBasePath, "index.html")
@@ -67,7 +71,7 @@ func scheduleTasks(manifest ManifestFile, baseDir, outDir string) []Task {
 				Section:        sectionName,
 				Sections:       sections,
 				OutputFile:     outFile,
-				Template:       getFullPath(baseDir, manifest.DefaultSectionTemplate),
+				Template:       getFullPath(baseDir, sectionTemplate),
 				LayoutTemplate: getFullPath(baseDir, manifest.DefaultLayoutTemplate),
 				Pages:          section.Pages,
 				Metadata:       merge(manifest.Metadata, section.Metadata),
@@ -77,31 +81,46 @@ func scheduleTasks(manifest ManifestFile, baseDir, outDir string) []Task {
 		for _, page := range section.Pages {
 			outputFilename := convertExtension(page.MarkdownPath, ".html")
 			outPath := getFullPath(sectionBasePath, outputFilename)
+			pageTemplate := page.Template
+			if pageTemplate == "" {
+				pageTemplate = section.PageTemplate
+			}
+			if pageTemplate == "" {
+				pageTemplate = manifest.DefaultPageTemplate
+			}
 
-			externalDataTasks := []ExternalDataTask{}
+			pageTitle := page.Title
+			if pageTitle == "" {
+				pageTitle = manifest.Title
+			}
 
-			for key, value := range page.ExternalData {
+			dataTasks := []DataTask{}
 
-				fmt.Println("\t\tKey: ", key, " Source: ", value.Source, " Url: ", manifest.ExternalData[value.Source].Url)
-
-				externalDataTasks = append(externalDataTasks, ExternalDataTask{
-					Key: key,
-					Url: manifest.ExternalData[value.Source].Url,
+			for key, ref := range page.Data {
+				source, ok := manifest.Sources[ref.Source]
+				if !ok {
+					fmt.Printf("Warning: source '%s' referenced by page '%s' is not defined\n", ref.Source, page.MarkdownPath)
+					continue
+				}
+				dataTasks = append(dataTasks, DataTask{
+					Key:     key,
+					UrlTmpl: source.Url,
+					Headers: source.Headers,
 				})
 			}
 
 			tasks = append(tasks, PageTask{
-				Title:             manifest.Title,
-				InputFile:         getFullPath(baseDir, page.MarkdownPath),
-				OutputFile:        outPath,
-				Url:               filepath.Join("/", sectionName, outputFilename),
-				Template:          getFullPath(baseDir, manifest.DefaultPageTemplate),
-				LayoutTemplate:    getFullPath(baseDir, manifest.DefaultLayoutTemplate),
-				Metadata:          merge(manifest.Metadata, page.Metadata),
-				Tags:              page.Tags,
-				Section:           sectionName,
-				Sections:          sections,
-				ExternalDataTasks: externalDataTasks,
+				Title:          pageTitle,
+				InputFile:      getFullPath(baseDir, page.MarkdownPath),
+				OutputFile:     outPath,
+				Url:            filepath.Join("/", sectionName, outputFilename),
+				Template:       getFullPath(baseDir, pageTemplate),
+				LayoutTemplate: getFullPath(baseDir, manifest.DefaultLayoutTemplate),
+				Metadata:       merge(manifest.Metadata, page.Metadata),
+				Tags:           page.Tags,
+				Section:        sectionName,
+				Sections:       sections,
+				DataTasks:      dataTasks,
 			})
 
 			for _, tag := range page.Tags {
@@ -119,16 +138,18 @@ func scheduleTasks(manifest ManifestFile, baseDir, outDir string) []Task {
 			os.MkdirAll(tagsBasePath, 0755)
 
 			// TODO - Create specific task for tags
-			tasks = append(tasks, &SectionTask{
-				Title:          manifest.Title,
-				OutputFile:     tagOutputFile,
-				Template:       getFullPath(baseDir, manifest.DefaultSectionTemplate),
-				LayoutTemplate: getFullPath(baseDir, manifest.DefaultLayoutTemplate),
-				Pages:          pages,
-				Section:        sectionName,
-				Sections:       sections,
-				Metadata:       merge(manifest.Metadata, section.Metadata),
-			})
+			if sectionTemplate != "" {
+				tasks = append(tasks, &SectionTask{
+					Title:          manifest.Title,
+					OutputFile:     tagOutputFile,
+					Template:       getFullPath(baseDir, sectionTemplate),
+					LayoutTemplate: getFullPath(baseDir, manifest.DefaultLayoutTemplate),
+					Pages:          pages,
+					Section:        sectionName,
+					Sections:       sections,
+					Metadata:       merge(manifest.Metadata, section.Metadata),
+				})
+			}
 
 		}
 	}

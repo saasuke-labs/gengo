@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/saasuke-labs/gengo/pkg/nagare"
 	"github.com/yuin/goldmark"
@@ -49,6 +50,11 @@ func MarkdownToHtml(markdownPath string) HtmlPage {
 	if err != nil {
 		log.Fatalf("failed to read %s: %v", markdownPath, err)
 	}
+	return MarkdownBytesToHtml(content)
+}
+
+func MarkdownBytesToHtml(content []byte) HtmlPage {
+	content = stripYAMLFrontMatter(content)
 	context := parser.NewContext()
 	doc := md.Parser().Parse(text.NewReader(content), parser.WithContext(context))
 
@@ -57,7 +63,6 @@ func MarkdownToHtml(markdownPath string) HtmlPage {
 
 	if h1 != "" {
 		title = h1
-
 	}
 
 	var article bytes.Buffer
@@ -77,4 +82,23 @@ func findFirstH1(doc ast.Node, source []byte) string {
 		}
 	}
 	return ""
+}
+
+func stripYAMLFrontMatter(content []byte) []byte {
+	lines := bytes.Split(content, []byte("\n"))
+	if len(lines) == 0 {
+		return content
+	}
+
+	if strings.TrimSpace(strings.TrimSuffix(string(lines[0]), "\r")) != "---" {
+		return content
+	}
+
+	for idx := 1; idx < len(lines); idx++ {
+		if strings.TrimSpace(strings.TrimSuffix(string(lines[idx]), "\r")) == "---" {
+			return bytes.Join(lines[idx+1:], []byte("\n"))
+		}
+	}
+
+	return content
 }
