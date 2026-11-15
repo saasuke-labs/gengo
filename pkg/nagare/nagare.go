@@ -117,7 +117,7 @@ func renderNagareSVG(code string) (string, error) {
 		return "", fmt.Errorf("nagare returned an empty SVG")
 	}
 	if isBareBackgroundSVG(trimmed) {
-		return "", fmt.Errorf("nagare rendered only a background; check the block for chart or diagram errors")
+		return "", fmt.Errorf("nagare rendered an empty diagram; check the block for chart or diagram errors")
 	}
 	return svg, nil
 }
@@ -132,7 +132,9 @@ func isBareBackgroundSVG(svg string) bool {
 			return false
 		}
 	}
-	return strings.Count(svg, "<rect") == 1
+	// nagare <= v0.0.12 drew a single background rect; later versions leave
+	// the canvas transparent, so an empty diagram has no rect at all.
+	return strings.Count(svg, "<rect") <= 1
 }
 
 // Extension represents the nagare extension
