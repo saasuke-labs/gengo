@@ -8,7 +8,7 @@ assets and writes a static site. It ships as a single CLI binary (`gengo generat
 
 ## Ecosystem (Saasuke Labs)
 
-- **nagare** (`github.com/saasuke-labs/nagare`, pinned in `go.mod`, currently `v0.0.13`):
+- **nagare** (`github.com/saasuke-labs/nagare`, pinned in `go.mod`, currently `v0.0.14`):
   text-to-SVG diagram and chart renderer. Gengo imports it as a Go library
   (`nagare/pkg/nagare.RenderToSVG`) through the goldmark extension in `pkg/nagare/`.
   A fenced code block whose language is exactly `nagare` is replaced by the inline SVG.

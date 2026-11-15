@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - The layout `.Title` is now the page title, falling back to the site title
 - `gengo` exits with a non-zero status when a command fails
-- Updated nagare to v0.0.12
+- Updated nagare to v0.0.14: redesigned diagram components, inline props rendered, chart axes on round values aligned with the data
 
 ### Removed
 - The unreleased `external-data` manifest key, replaced by `sources`
