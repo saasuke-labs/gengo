@@ -24,8 +24,8 @@ func renderNode(buf *bytes.Buffer, node Node) error {
 		if isComponent(n.Name) {
 			// Render as Go template invocation
 			buf.WriteString("{{ template \"" + n.Name + "\" (dict")
-			for k, v := range n.Attributes {
-				buf.WriteString(fmt.Sprintf(` "%s" "%s"`, k, v))
+			for _, a := range n.Attributes {
+				buf.WriteString(fmt.Sprintf(` "%s" "%s"`, a.Name, a.Value))
 			}
 			if len(n.Children) > 0 {
 				var innerBuf bytes.Buffer
@@ -38,8 +38,8 @@ func renderNode(buf *bytes.Buffer, node Node) error {
 		} else {
 			// Render as normal HTML tag
 			buf.WriteString("<" + n.Name)
-			for k, v := range n.Attributes {
-				buf.WriteString(fmt.Sprintf(` %s="%s"`, k, html.EscapeString(v)))
+			for _, a := range n.Attributes {
+				buf.WriteString(fmt.Sprintf(` %s="%s"`, a.Name, html.EscapeString(a.Value)))
 			}
 			buf.WriteString(">")
 			for _, child := range n.Children {

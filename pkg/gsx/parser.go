@@ -10,8 +10,14 @@ type Node interface{}
 
 type Element struct {
 	Name       string
-	Attributes map[string]string
+	Attributes []Attribute // in source order, so output is deterministic
 	Children   []Node
+}
+
+// Attribute is one name="value" pair on an element.
+type Attribute struct {
+	Name  string
+	Value string
 }
 
 type Text struct {
@@ -84,8 +90,8 @@ func (p *parser) readIdentifier() string {
 	return p.input[start:p.pos]
 }
 
-func (p *parser) readAttributes() map[string]string {
-	attrs := make(map[string]string)
+func (p *parser) readAttributes() []Attribute {
+	var attrs []Attribute
 	for {
 		p.skipWhitespace()
 		if p.peek() == '/' || p.peek() == '>' {
@@ -97,10 +103,21 @@ func (p *parser) readAttributes() map[string]string {
 			break
 		}
 		p.skipWhitespace()
-		val := p.readQuotedString()
-		attrs[key] = val
+		attrs = setAttribute(attrs, key, p.readQuotedString())
 	}
 	return attrs
+}
+
+// setAttribute adds an attribute, or replaces the value of one already
+// present so that, as before, the last occurrence of a name wins.
+func setAttribute(attrs []Attribute, name, value string) []Attribute {
+	for i := range attrs {
+		if attrs[i].Name == name {
+			attrs[i].Value = value
+			return attrs
+		}
+	}
+	return append(attrs, Attribute{Name: name, Value: value})
 }
 
 func (p *parser) readQuotedString() string {
