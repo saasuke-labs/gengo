@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<!-- Styles, fonts and scripts come from the main site (saasuke-labs.com/static/). -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gengo · Static site generator · Saasuke Labs</title>
+    <meta
+      name="description"
+      content="Gengo is a static site generator in Go: Markdown, HTML templates and one YAML manifest in, a static site out."
+    />
+    <meta property="og:site_name" content="Saasuke Labs" />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="Gengo · Static site generator · Saasuke Labs"
+    />
+    <meta
+      property="og:description"
+      content="Gengo is a static site generator in Go: Markdown, HTML templates and one YAML manifest in, a static site out."
+    />
+    <meta property="og:image" content="https://saasuke-labs.com/static/logo.png" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="icon" type="image/png" href="/static/logo.png" />
+    <link
+      rel="alternate"
+      type="application/atom+xml"
+      title="Saasuke Labs releases"
+      href="/static/data/releases.xml"
+    />
+
+    <script>
+      // Apply the saved theme before first paint.
+      try {
+        var t = localStorage.getItem("theme");
+        if (t) document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Shippori+Mincho:wght@600;800&display=swap"
+    />
+    <link rel="stylesheet" href="/static/site.css" />
+
+    <!-- Google tag (gtag.js) -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-7ZYXW0159J"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-7ZYXW0159J");
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="/">
+          <img src="/static/logo.png" alt="" width="34" height="42" />
+          Saasuke Labs
+        </a>
+        <nav class="site-nav" aria-label="Main">
+          <a href="/#tools">Tools</a>
+          <a href="/releases/">Releases</a>
+          <a
+            class="nav-optional"
+            href="https://github.com/saasuke-labs"
+            rel="noopener"
+            >GitHub</a
+          >
+          <button
+            class="theme-toggle"
+            type="button"
+            aria-label="Switch between light and dark theme"
+            data-theme-toggle
+          >
+            ◐
+          </button>
+          <a class="btn small" href="/sponsor/">Sponsor</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-head">
+        <div class="wrap">
+          <p class="crumbs"><a href="/#tools">Tools</a> / <span>Static site generator</span></p>
+          <div class="title-row">
+            <h1>Gengo</h1>
+            <a class="tag version" data-version="gengo" href="/releases/#gengo"></a>
+          </div>
+          <p>Markdown, HTML templates and one YAML manifest in, a static site out. A single Go binary with nothing else to install. This website is built with it.</p>
+          <div class="actions">
+            <a class="btn" href="https://github.com/saasuke-labs/gengo" rel="noopener">View on GitHub</a>
+            <a class="btn ghost" href="/releases/#gengo">Release notes</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="wrap docs">
+          <nav class="docs-toc" aria-label="On this page">
+            <h2>On this page</h2>
+            <ul><li><a href="#install">Install</a></li><li><a href="#quick-start">Quick start</a></li><li><a href="#manifest">The manifest</a></li><li><a href="#templates">Templates</a></li><li><a href="#commands">Commands</a></li><li><a href="#diagrams">Diagrams and charts</a></li><li><a href="#data">Build-time data</a></li><li><a href="#ci">Deploying from CI</a></li><li><a href="#licence">Licence</a></li></ul>
+          </nav>
+          <article class="prose">
+<h2 id="install">Install</h2>
+<p>The install script downloads the latest release for your platform, checks it against the published checksums and puts <code>gengo</code> in <code>~/.local/bin</code>.</p><pre><code><span class="dim">$</span> curl -fsSL https://raw.githubusercontent.com/saasuke-labs/gengo/main/install/install.sh | bash</code></pre><p>To pin a version:</p><pre><code><span class="dim">$</span> curl -fsSL https://raw.githubusercontent.com/saasuke-labs/gengo/main/install/install.sh | VERSION=0.0.15 bash</code></pre><p>You can also download an archive from the <a href="https://github.com/saasuke-labs/gengo/releases" rel="noopener">releases page</a>, or build from source:</p><pre><code><span class="dim">$</span> git clone https://github.com/saasuke-labs/gengo
+<span class="dim">$</span> cd gengo
+<span class="dim">$</span> go build -o gengo ./cmd/main.go</code></pre>
+<h2 id="quick-start">Quick start</h2>
+<p>A Gengo site is a manifest plus the files it points to. Create <code>gengo.yaml</code>:</p><pre><code>title: My Site
+
+default-layout-template: layouts/layout.html
+home-template: layouts/home.html
+
+static-assets:
+  - path: static
+    destination: static
+
+sections:
+  blog:
+    pages:
+      - title: "Hello world"
+        markdown-path: posts/hello-world.md</code></pre><p>The layout wraps every page. It is a Go <code>html/template</code> file:</p><pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+  &lt;head&gt;
+    &lt;title&gt;{{ .Title }}&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    {{ .HTML }}
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre><p>Build the site, then preview it:</p><pre><code><span class="dim">$</span> gengo generate --output dist
+<span class="dim">$</span> gengo serve --site dist --watch</code></pre><p>The page above is written to <code>dist/blog/hello-world.html</code>: one folder per section, one file per page.</p>
+<h2 id="manifest">The manifest</h2>
+<p>Everything Gengo builds is declared in <code>gengo.yaml</code>.</p><div class="table-scroll"><table><thead><tr><th>Key</th><th>What it does</th></tr></thead><tbody><tr><td><code>title</code></td><td>Site title, available to templates.</td></tr><tr><td><code>default-layout-template</code></td><td>The HTML shell wrapped around every page.</td></tr><tr><td><code>home-template</code></td><td>Template for the home page, written to <code>index.html</code>.</td></tr><tr><td><code>default-page-template</code></td><td>Template that wraps the rendered content of a page inside the layout.</td></tr><tr><td><code>default-section-template</code></td><td>Template for a section's index, which lists its pages.</td></tr><tr><td><code>static-assets</code></td><td>Folders copied as they are. Each entry has a <code>path</code> and a <code>destination</code>; use <code>destination: .</code> for files that belong at the site root.</td></tr><tr><td><code>sections</code></td><td>Named groups of pages. The section name becomes the folder in the output.</td></tr><tr><td><code>sources</code></td><td>HTTP services pages can read at build time. See <a href="#data">build-time data</a>.</td></tr></tbody></table></div><h3>Pages</h3><p>Each entry under a section's <code>pages</code> accepts:</p><div class="table-scroll"><table><thead><tr><th>Key</th><th>What it does</th></tr></thead><tbody><tr><td><code>markdown-path</code></td><td>The source file. Markdown is rendered; an <code>.html</code> file is inserted as it is.</td></tr><tr><td><code>title</code></td><td>Page title.</td></tr><tr><td><code>description</code></td><td>Short description for listings and meta tags.</td></tr><tr><td><code>published-at</code>, <code>last-edited-at</code></td><td>Dates you can show or sort by in templates.</td></tr><tr><td><code>tags</code></td><td>A list of tags.</td></tr><tr><td><code>metadata</code></td><td>Free-form key/value pairs for your templates.</td></tr><tr><td><code>data</code></td><td>Which <code>sources</code> to fetch for this page.</td></tr></tbody></table></div><p>The same keys can go in front matter at the top of the Markdown file instead of the manifest.</p>
+<h2 id="templates">Templates</h2>
+<p>Templates use Go's <code>html/template</code> syntax. The layout receives:</p><div class="table-scroll"><table><thead><tr><th>Field</th><th>Contains</th></tr></thead><tbody><tr><td><code>.Title</code></td><td>The page title.</td></tr><tr><td><code>.Section</code></td><td>The section name, empty on the home page.</td></tr><tr><td><code>.Metadata</code></td><td>The page's metadata map. Read a key with <code>{{ index .Metadata "key" }}</code>.</td></tr><tr><td><code>.HTML</code></td><td>The rendered page content.</td></tr><tr><td><code>.Data</code></td><td>Build-time data fetched for the page.</td></tr></tbody></table></div>
+<h2 id="commands">Commands</h2>
+<h3>gengo generate</h3><p>Builds the site from the manifest.</p><div class="table-scroll"><table><thead><tr><th>Flag</th><th>Default</th><th>What it does</th></tr></thead><tbody><tr><td><code>--manifest</code></td><td><code>gengo.yaml</code></td><td>Path to the manifest. Can be repeated.</td></tr><tr><td><code>--output</code></td><td><code>output</code></td><td>Output directory.</td></tr><tr><td><code>--plain</code></td><td>off</td><td>Plain log output instead of the terminal UI. Use it in CI.</td></tr><tr><td><code>--watch</code></td><td>off</td><td>Rebuild on change, with hot reload.</td></tr></tbody></table></div><h3>gengo serve</h3><p>Serves a generated site locally.</p><div class="table-scroll"><table><thead><tr><th>Flag</th><th>Default</th><th>What it does</th></tr></thead><tbody><tr><td><code>--site</code></td><td><code>site</code></td><td>Directory to serve.</td></tr><tr><td><code>--watch</code></td><td>off</td><td>Watch mode with hot reload.</td></tr></tbody></table></div><h3>gengo version</h3><p>Prints the installed version.</p>
+<h2 id="diagrams">Diagrams and charts</h2>
+<p>A fenced code block with the language <code>nagare</code> is rendered to an inline SVG by <a href="/nagare/">Nagare</a>, so diagrams live in the Markdown next to the text they explain.</p><pre><code>```nagare
+web:Browser(text: "Shop")
+api:Server(title: "API", port: 8080)
+
+web.e --&gt; api.w
+```</code></pre><p>If a block fails to render, the error is shown in the page where the diagram would be, so it is hard to miss before you publish.</p>
+<h2 id="data">Build-time data</h2>
+<p>Pages can pull data from any HTTP service while the site builds: a comments service such as <a href="/kotomi/">Kotomi</a>, a weather API, your own backend. Declare the service once under <code>sources</code>:</p><pre><code>sources:
+  comments:
+    # Go template, rendered per page with that page's metadata
+    url: https://comments.example.com/pages/{{ index .Metadata "page-id" }}/comments
+    headers:
+      Accept: application/json</code></pre><p>Then reference it from a page:</p><pre><code>---
+title: Hello
+metadata:
+  page-id: hello-world
+data:
+  comments:
+    source: comments
+---
+This post has {{ len .Data.comments }} comments.</code></pre><p>Each entry is available as <code>.Data.&lt;key&gt;</code> in the Markdown file, the page template and the layout. JSON is parsed into structured data, <code>text/html</code> is inserted as HTML and anything else is a plain string. Requests time out after 15 seconds; a failed source logs a warning and leaves its key empty instead of failing the build.</p>
+<h2 id="ci">Deploying from CI</h2>
+<p>Install Gengo in the job, build with <code>--plain</code> and publish the output folder. On GitHub Actions:</p><pre><code>- name: Install Gengo
+  run: |
+    curl -fsSL https://raw.githubusercontent.com/saasuke-labs/gengo/main/install/install.sh | bash
+    echo "$HOME/.local/bin" &gt;&gt; "$GITHUB_PATH"
+
+- name: Build
+  run: gengo generate --output dist --plain</code></pre><p>The <a href="https://github.com/saasuke-labs/site-source" rel="noopener">source of this website</a> is a complete working example.</p>
+<h2 id="licence">Licence</h2>
+<p>Gengo is free for non-commercial use under the Polyform Noncommercial licence. Using it inside a product or service needs a commercial licence; the <a href="https://github.com/saasuke-labs/gengo/blob/main/COMMERCIAL.md" rel="noopener">details are in the repository</a>.</p>
+
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="wrap">
+          <div class="cta">
+            <div>
+              <h2>Using Gengo at work?</h2>
+              <p>
+                Saasuke Labs is independent and maintained in the open.
+                Sponsorship pays for maintenance, documentation and releases.
+              </p>
+            </div>
+            <div class="actions">
+              <a class="btn" href="/sponsor/">Become a sponsor</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <div class="about">
+          <a class="brand" href="/">
+            <img src="/static/logo.png" alt="" width="34" height="42" />
+            Saasuke Labs
+          </a>
+          <p style="margin-top: 12px; max-width: 26em">
+            Independent, open tools in Go. This site is built with Gengo and
+            rebuilt on every product release.
+          </p>
+        </div>
+        <div>
+          <h4>Tools</h4>
+          <ul>
+            <li><a href="/gengo/">Gengo</a></li>
+            <li><a href="/nagare/">Nagare</a></li>
+            <li><a href="/kotomi/">Kotomi</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Project</h4>
+          <ul>
+            <li><a href="/releases/">Releases</a></li>
+            <li><a href="/static/data/releases.xml">Release feed</a></li>
+            <li>
+              <a href="https://github.com/saasuke-labs" rel="noopener"
+                >GitHub</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Support</h4>
+          <ul>
+            <li><a href="/sponsor/">Become a sponsor</a></li>
+            <li>
+              <a href="https://github.com/sponsors/saasuke-labs" rel="noopener"
+                >GitHub Sponsors</a
+              >
+            </li>
+            <li>
+              <a href="https://ko-fi.com/saasukelabs" rel="noopener">Ko-fi</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </footer>
+
+    <script src="/static/site.js" defer></script>
+  </body>
+</html>
